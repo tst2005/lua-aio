@@ -44,7 +44,7 @@ EOD
 
 MODULE_BEGIN=0
 
-while true; do
+while [ $# -gt 0 ]; do
 	case "$1" in
 		--code)
 			if [ $MODULE_BEGIN -eq 1 ]; then
@@ -61,7 +61,7 @@ while true; do
 			shift; pack_module "$1" "$2" ; shift; shift ; continue
 		;;
 		--) shift ; break ;;
-		*) echo "error $1" ; exit 1
+		*) echo >&2 "error $1" ; exit 1
 	esac
 	shift
 done
