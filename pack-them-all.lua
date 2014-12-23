@@ -68,6 +68,26 @@ local function pack_module(modname, modpath)
 --	pack_module_end
 end
 
+local function datapack(data, tagsep)
+	local tagsep = tagsep and tagsep or ''
+	local c = data:sub(1,1)
+	if c == "\n" or c == "\r" then
+		return "["..tagsep.."["..c..data.."]"..tagsep.."]"
+	end
+	return "["..tagsep.."["..data.."]"..tagsep.."]"
+end
+
+local function datapack_with_unpackcode(data, tagsep)
+	return "(" .. datapack(data:gsub("%]", "\\]"), tagsep) .. ")" .. [[:gsub( "\\%]", "]" )]]
+end
+
+local function pack_file(filename, filepath)
+	local data = cat(filepath)
+	data = "--fakefs ".. filename .. "\n" .. data
+	local code = "do local p=require'package';p.fakefs=(p.fakefs or {});p.fakefs[\"" .. filename .. "\"]=" .. datapack_with_unpackcode(data, '==') .. ";end\n"
+--	local code = "local x = " .. datapack_with_unpackcode(data) .. ";io.write(x)"
+	output(code)
+end
 
 local MODULE_BEGIN=0
 
@@ -89,6 +109,10 @@ while i <= #arg do
 		local name=arg[i]; i=i+1
 		local file=arg[i]; i=i+1
 		pack_module(name, file)
+	elseif a1 == "--file" then
+		local filename = arg[i]; i=i+1
+		local filepath = arg[i]; i=i+1
+		pack_file(filename, filepath)
 	elseif a1 == "--" then
 		break
 	else
