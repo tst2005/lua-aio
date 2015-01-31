@@ -2,10 +2,19 @@
 
 Embeding all lua modules/files of a project into only one lua file
 
+Note: it's an Alpha version.
+
 # Why using this util ?
 
-I only use this util for Alephone Game because the Lua Script support only support ONE Lua file to load.
-Having one big file is too ugly for me, I prefere split all part to lua modules and generate the big one at the end.
+I currently use this util in 2 rpojects :
+ * for Alephone Game
+  because the Lua Script support only support ONE Lua file to load.
+  Having one big file is too ugly for me, I prefere split all part to lua modules and generate the big one at the end.
+ * In fakelove
+ A implementation of LÖVE in pur lua (without graphical stuff) usefull for server side code game.
+
+
+# How it run
 
 This util catch each the module file content and push it inside the preload table.
 By this way we can use `require("modulename")` like usual. 
