@@ -1,5 +1,10 @@
 #!/bin/sh
 
+# ----------------------------------------------------------------------------
+#	-- Dragoon Framework - A Framework for Lua/LOVE --
+#	-- Copyright (c) 2014-2015 TsT worldmaster.fr <tst2005@gmail.com> --
+# ----------------------------------------------------------------------------
+
 # $0 --mod <modname1 pathtofile1> --mod <modname2> <pathtofile2> -- <file> [files...]
 
 # TODO: support -h|--help and help/usage text
