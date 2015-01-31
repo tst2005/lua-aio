@@ -6,7 +6,7 @@ Note: it's an Alpha version.
 
 # Why using this util ?
 
-I currently use this util in 2 rpojects :
+I currently use this util in 2 projects :
  * for Alephone Game
   because the Lua Script support only support ONE Lua file to load.
   Having one big file is too ugly for me, I prefere split all part to lua modules and generate the big one at the end.
@@ -16,7 +16,7 @@ I currently use this util in 2 rpojects :
 
 # How it run
 
-This util catch each the module file content and push it inside the preload table.
+This util catch each module files and push their contents inside the preload table.
 By this way we can use `require("modulename")` like usual. 
 
 # Documentation
