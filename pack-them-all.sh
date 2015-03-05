@@ -46,6 +46,10 @@ EOD
 #	pack_module_end
 }
 
+min_pack_module_begin() { echo 'do local package=require"package"'; }
+min_pack_module_end() { echo 'end'; }
+min_pack_module() { echo 'do local _tmp_;do local package; function _tmp_(...)';cat -- "$2";echo 'end;end;package.preload["'"$1"'"]=_tmp_;end'; }
+
 
 MODULE_BEGIN=0
 
@@ -53,17 +57,17 @@ while [ $# -gt 0 ]; do
 	case "$1" in
 		--code)
 			if [ $MODULE_BEGIN -eq 1 ]; then
-				pack_module_end
+				min_pack_module_end
 				MODULE_BEGIN=0
 			fi
 			shift ; cat -- "$1" ; shift ; continue
 		;;
 		--mod)
 			if [ $MODULE_BEGIN -eq 0 ]; then
-				pack_module_begin
+				min_pack_module_begin
 				MODULE_BEGIN=1
 			fi
-			shift; pack_module "$1" "$2" ; shift; shift ; continue
+			shift; min_pack_module "$1" "$2" ; shift; shift ; continue
 		;;
 		--) shift ; break ;;
 		*) echo >&2 "error $1" ; exit 1
@@ -72,7 +76,7 @@ while [ $# -gt 0 ]; do
 done
 
 if [ $MODULE_BEGIN -eq 1 ]; then
-	pack_module_end
+	min_pack_module_end
 	MODULE_BEGIN=0
 fi
 
