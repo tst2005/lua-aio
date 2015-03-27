@@ -23,6 +23,31 @@ local function cat(dirfile)
 	return data
 end
 
+local function extractshebang(data)
+	if data:sub(1,1) ~= "#" then
+		return data, nil
+	end
+	local b, e, shebang = data:find("^([^\n]+)\n")
+	return data:sub(e+1), shebang
+end
+
+do -- selftest
+	local data, shebang = extractshebang
+[[#!/bin/sh
+test
+]]
+	assert(shebang=="#!/bin/sh")
+	assert(data=="test\n")
+
+	local data, shebang = extractshebang
+[[blah blah
+test
+]]
+	assert(shebang==nil)
+	assert(data=="blah blah\ntest\n")
+
+end -- end of selftests
+
 local function print_no_nl(data)
 	output(data)
 end
@@ -34,10 +59,10 @@ local function pack_module(modname, modpath)
 	-- TODO: improve: include in function code a comment with the name of original file (it will be shown in the trace error message) ?
 	-- like [[...-- <pack ]]..modname..[[> --
 	print_no_nl(
-		[[do require("package").preload["XXXXX"] = (function() local package;return function(...)]]
+		[[do require("package").preload["]] .. modname .. [["] = (function() local package;return function(...)]]
 		.. "-- <pack "..modname.."> --".."\n"
-		.. cat(modpath) ..
-		[[end end)()end]]
+		.. extractshebang(cat(modpath)) ..
+		[[ end end)()end;]].."\n"
 	)
 end
 
@@ -67,7 +92,7 @@ while i <= #arg do
 	local a1 = arg[i]; i=i+1
 	if a1 == "--code" then
 		local file=arg[i]; i=i+1
-		print_no_nl(cat(file))
+		print_no_nl(extractshebang(cat(file)))
 	elseif a1 == "--mod" then
 		local name=arg[i]; i=i+1
 		local file=arg[i]; i=i+1
