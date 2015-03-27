@@ -7,6 +7,7 @@
 
 -- $0 --mod <modname1 pathtofile1> [--mod <modname2> <pathtofile2>] [-- <file> [files...]]
 -- $0 {--mod ...|--code ...} [-- files...]
+-- $0 --autoaliases
 
 -- TODO: support -h|--help and help/usage text
 
@@ -87,6 +88,22 @@ local function pack_file(filename, filepath)
 	output(code)
 end
 
+local function autoaliases_code()
+	print_no_nl[[
+do -- preload auto aliasing...
+	local p = require("package").preload
+	for k,v in pairs(p) do
+		if k:find("%.init$") then
+			local short = k:gsub("%.init$", "")
+			if not p[short] then
+			p[short] = v
+			end
+		end
+	end
+end
+]]
+end
+
 local i = 1
 while i <= #arg do
 	local a1 = arg[i]; i=i+1
@@ -101,6 +118,8 @@ while i <= #arg do
 		local filename = arg[i]; i=i+1
 		local filepath = arg[i]; i=i+1
 		pack_file(filename, filepath)
+	elseif a1 == "--autoaliases" then
+		autoaliases_code()
 	elseif a1 == "--" then
 		break
 	else
