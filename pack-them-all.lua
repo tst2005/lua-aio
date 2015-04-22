@@ -24,6 +24,20 @@ local function cat(dirfile)
 	return data
 end
 
+local function head(dirfile, n)
+	assert(dirfile)
+	local fd = assert(io.open(dirfile, "r"))
+	local data = nil
+	for i = 1,n,1 do
+		local line = fd:read('*l')
+		if not line then break end
+		data = ( (data and data .. "\n") or ("") ) .. line
+	end
+	fd:close()
+	return data
+end
+
+
 local function extractshebang(data)
 	if data:sub(1,1) ~= "#" then
 		return data, nil
@@ -31,6 +45,22 @@ local function extractshebang(data)
 	local b, e, shebang = data:find("^([^\n]+)\n")
 	return data:sub(e+1), shebang
 end
+
+local function get_shebang(data)
+	if data:sub(1,1) ~= "#" then
+		return false
+	end
+	local b, e, shebang = data:find("^([^\n]+)\n")
+	return shebang
+end
+
+assert( get_shebang("abc") == false )
+assert( get_shebang("#!/bin/cool\n#blah\n") == "#!/bin/cool" )
+assert( get_shebang("#!/bin/cool\n#blah") == "#!/bin/cool" )
+assert( get_shebang("#!/bin/cool\n") == "#!/bin/cool" )
+--assert( get_shebang("#!/bin/cool") == "#!/bin/cool" )
+assert( get_shebang("# !/bin/cool\n") == "# !/bin/cool" )
+
 
 do -- selftest
 	local data, shebang = extractshebang
@@ -110,6 +140,10 @@ while i <= #arg do
 	if a1 == "--code" then
 		local file=arg[i]; i=i+1
 		print_no_nl(extractshebang(cat(file)))
+	elseif a1 == "--shebang" then
+		local file=arg[i]; i=i+1
+		local shebang = get_shebang(head(file, 1).."\n")
+		print_no_nl( shebang and shebang.."\n" or "")
 	elseif a1 == "--mod" then
 		local name=arg[i]; i=i+1
 		local file=arg[i]; i=i+1
