@@ -29,15 +29,43 @@ $ ./pack-them-all.sh <arguments...>
 
 ```
 arguments :
+  --shebang <path/to/file>
   --mod <modulename> <path/to/modulefile.lua>
   --code <path/to/code1.lua>
+  --file <path/to/file>           *experimental*
+  --autoaliases                   *experimental*
   -- [<file1> [<file2> [...]]]
 ```
 
-TODO: check if the syntax is still exact...
+# autoaliases feature
+
+In usual case a module named `abc` defined in an `abc/init.lua` file should be called with an `abc` name : `require("abc")`
+because the usual loader use package.path to search `?.lua` or `?/init.lua`.
+
+The preload system does not use path.
+
+The --autoaliases make aliases for all registred modules named with the `.init` suffix to be called without the suffix.
+Must be used at the end (when module will be already registred in preload table).
+
 
 # Sample of use
 
 See files inside the sample directory
 
-TODO: create the sample directory :D
+# TODO
+
+ * improve the shebang detection : raise a warning if the shebang seems not a shebang but a simple shell comment.
+   See: http://www.lua.org/source/5.2/lauxlib.c.html#skipBOM http://www.lua.org/source/5.2/lauxlib.c.html#skipcomment
+ * add the line number info in the first comment (usefull for debug?)
+ * create the sample directory :D
+ * implement the .sh version like the new .lua one (or drop the .sh version)
+ * document the --autoaliases behavior
+ * (?) allow to use --autoaliases anywhere (the code will be added at the end)
+```
+do ..... function(...)-- <pack something.init> 9233 --
+```
+
+## v-next
+ * recode the whole .lua to be a lua module
+ * (?) use and embed a getopt or argparse module to manage --options
+
