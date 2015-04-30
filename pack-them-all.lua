@@ -11,6 +11,8 @@
 
 -- TODO: support -h|--help and help/usage text
 
+local deny_package_access = false
+
 assert(arg)
 local argv = #arg -1
 local io = require"io"
@@ -83,17 +85,34 @@ local function print_no_nl(data)
 	output(data)
 end
 
+-- this is a workaround needed when the last character of the module content is end of line and the last line is a comment.
+local function autoeol(data)
+	local lastchar = data:sub(-1, -1)
+	if lastchar ~= "\n" then
+		return data .. "\n"
+	end
+	return data
+end
+
 local function pack_module(modname, modpath)
 	assert(modname)
 	assert(modpath)
 
+	local b = [[require("package").preload["]] .. modname .. [["] = function(...)]]
+	local e = [[end;]]
+
+	if deny_package_access then
+		b = [[do require("package").preload["]] .. modname .. [["] = (function() local package;return function(...)]]
+		e = [[end end)()end;]]
+	end
+
 	-- TODO: improve: include in function code a comment with the name of original file (it will be shown in the trace error message) ?
 	-- like [[...-- <pack ]]..modname..[[> --
 	print_no_nl(
-		[[do require("package").preload["]] .. modname .. [["] = (function() local package;return function(...)]]
+		b
 		.. "-- <pack "..modname.."> --".."\n"
-		.. extractshebang(cat(modpath)) ..
-		[[ end end)()end;]].."\n"
+		.. autoeol(extractshebang(cat(modpath)))
+		.. e .."\n"
 	)
 end
 
