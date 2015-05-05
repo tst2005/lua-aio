@@ -12,6 +12,8 @@
 -- TODO: support -h|--help and help/usage text
 
 local deny_package_access = false
+local module_with_integrity_check = true
+local modcount = 0
 
 assert(arg)
 local argv = #arg -1
@@ -106,6 +108,10 @@ local function pack_module(modname, modpath)
 		e = [[end end)()end;]]
 	end
 
+	if module_with_integrity_check then
+		e = e .. [[__ICHECK__[#__ICHECK__+1] = ]].."'"..modname.."'"..[[;__ICHECKCOUNT__=(__ICHECKCOUNT__+1);]]
+	end
+
 	-- TODO: improve: include in function code a comment with the name of original file (it will be shown in the trace error message) ?
 	-- like [[...-- <pack ]]..modname..[[> --
 	print_no_nl(
@@ -114,6 +120,7 @@ local function pack_module(modname, modpath)
 		.. autoeol(extractshebang(cat(modpath)))
 		.. e .."\n"
 	)
+	modcount = modcount + 1 -- for integrity check
 end
 
 local function datapack(data, tagsep)
@@ -153,6 +160,23 @@ end
 ]]
 end
 
+local function integrity_check_code()
+	assert(modcount)
+	print_no_nl([[
+-- integrity check
+print( (__ICHECKCOUNT__ or "").." module(s) embedded.")
+assert(__ICHECKCOUNT__==]].. modcount ..[[)
+if not __ICHECK__ then
+	error("Intergity check failed: no such __ICHECK__", 1)
+end
+--do for i,v in ipairs(__ICHECK__) do print(i, v) end end
+if #__ICHECK__ ~= ]] .. modcount .. [[ then
+	error("Intergity check failed: expect ]] .. modcount .. [[, got "..#__ICHECK__.." modules", 1)
+end
+-- end of integrity check
+]])
+end
+
 local i = 1
 while i <= #arg do
 	local a1 = arg[i]; i=i+1
@@ -173,6 +197,10 @@ while i <= #arg do
 		pack_file(filename, filepath)
 	elseif a1 == "--autoaliases" then
 		autoaliases_code()
+	elseif a1 == "--icheck" then
+		integrity_check_code()
+	elseif a1 == "--icheckinit" then
+		print_no_nl("local __ICHECK__ = {};__ICHECKCOUNT__=0;\n")
 	elseif a1 == "--" then
 		break
 	else
