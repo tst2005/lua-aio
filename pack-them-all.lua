@@ -14,6 +14,7 @@
 local deny_package_access = false
 local module_with_integrity_check = false
 local modcount = 0
+local mode = "normal"
 
 assert(arg)
 local argv = #arg -1
@@ -98,6 +99,11 @@ local function autoeol(data)
 	return data
 end
 
+local function rawpack_module(modname, modpath)
+	-- not implemented yet
+	-- TODO: embedding with rawdata (string) and eval the lua code at runtime with load or loadstring
+end
+
 local function pack_module(modname, modpath)
 	assert(modname)
 	assert(modpath)
@@ -180,26 +186,50 @@ end
 end
 
 local i = 1
+local function shift(n)
+	i=i+(n or 1)
+end
 while i <= #arg do
 	local a1 = arg[i]; i=i+1
 	if a1 == "--code" then
-		local file=arg[i]; i=i+1
+		local file=arg[i]; shift()
 		print_no_nl(dropshebang(cat(file)))
 	elseif a1 == "--codehead" then
-		local n=arg[i]; i=i+1
-		local file=arg[i]; i=i+1
+		local n=arg[i]; shift()
+		local file=arg[i]; shift()
 		print_no_nl( dropshebang( head(file, n).."\n" ) )
 	elseif a1 == "--shebang" then
-		local file=arg[i]; i=i+1
+		local file=arg[i]; shift()
 		local shebang = get_shebang(head(file, 1).."\n")
 		print_no_nl( shebang and shebang.."\n" or "")
 	elseif a1 == "--mod" then
-		local name=arg[i]; i=i+1
-		local file=arg[i]; i=i+1
+		local name=arg[i]; shift()
+		local file=arg[i]; shift()
+		if mode == "normal" then
+			pack_module(name, file)
+		elseif mode == "raw" then
+			rawpack_module(name, file)
+		else
+			error("invalid mode when using --mod", 2)
+		end
+	elseif a1 == "--luamod" then
+		local name=arg[i]; shift()
+		local file=arg[i]; shift()
 		pack_module(name, file)
+	elseif a1 == "--rawmod" then
+		local name=arg[i]; shift()
+		local file=arg[i]; shift()
+		rawpack_module(name, file)
+	elseif a1 == "--mode" then
+		local newmode=arg[i]; shift()
+		if newmode == "normal" or newmode == "raw" then
+			mode = newmode
+		else
+			error("invalid mode", 2)
+		end
 	elseif a1 == "--file" then
-		local filename = arg[i]; i=i+1
-		local filepath = arg[i]; i=i+1
+		local filename = arg[i]; shift()
+		local filepath = arg[i]; shift()
 		pack_file(filename, filepath)
 	elseif a1 == "--autoaliases" then
 		autoaliases_code()
@@ -208,6 +238,11 @@ while i <= #arg do
 	elseif a1 == "--icheckinit" then
 		print_no_nl("local __ICHECK__ = {};__ICHECKCOUNT__=0;\n")
 		module_with_integrity_check = true
+	elseif a1 == "--require" then
+		local modname = arg[i]; shift()
+		assert(modname:find('^[a-zA-Z0-9%._-]+$'), "error: invalid modname")
+		local code = [[require("]]..modname..[[")]]
+		print_no_nl( code.."\n" )
 	elseif a1 == "--" then
 		break
 	else
