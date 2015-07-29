@@ -50,12 +50,14 @@ local function extractshebang(data)
 	return data:sub(e+1), shebang
 end
 
+local function dropshebang(data)
+	local data, shebang = extractshebang(data)
+	return data
+end
+
 local function get_shebang(data)
-	if data:sub(1,1) ~= "#" then
-		return false
-	end
-	local b, e, shebang = data:find("^([^\n]+)\n")
-	return shebang
+	local data, shebang = extractshebang(data)
+	return shebang or false
 end
 
 assert( get_shebang("abc") == false )
@@ -182,7 +184,11 @@ while i <= #arg do
 	local a1 = arg[i]; i=i+1
 	if a1 == "--code" then
 		local file=arg[i]; i=i+1
-		print_no_nl(extractshebang(cat(file)))
+		print_no_nl(dropshebang(cat(file)))
+	elseif a1 == "--codehead" then
+		local n=arg[i]; i=i+1
+		local file=arg[i]; i=i+1
+		print_no_nl( dropshebang( head(file, n).."\n" ) )
 	elseif a1 == "--shebang" then
 		local file=arg[i]; i=i+1
 		local shebang = get_shebang(head(file, 1).."\n")
