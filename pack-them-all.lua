@@ -12,7 +12,7 @@
 -- TODO: support -h|--help and help/usage text
 
 local deny_package_access = false
-local module_with_integrity_check = true
+local module_with_integrity_check = false
 local modcount = 0
 
 assert(arg)
@@ -164,7 +164,7 @@ local function integrity_check_code()
 	assert(modcount)
 	print_no_nl([[
 -- integrity check
-print( (__ICHECKCOUNT__ or "").." module(s) embedded.")
+--print( (__ICHECKCOUNT__ or "").." module(s) embedded.")
 assert(__ICHECKCOUNT__==]].. modcount ..[[)
 if not __ICHECK__ then
 	error("Intergity check failed: no such __ICHECK__", 1)
@@ -201,6 +201,7 @@ while i <= #arg do
 		integrity_check_code()
 	elseif a1 == "--icheckinit" then
 		print_no_nl("local __ICHECK__ = {};__ICHECKCOUNT__=0;\n")
+		module_with_integrity_check = true
 	elseif a1 == "--" then
 		break
 	else
