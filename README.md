@@ -2,7 +2,7 @@
 
 Embeding all lua modules/files of a project into only one lua file
 
-Note: it's an Alpha version.
+Note: it's an Betaversion.
 
 # Why using this util ?
 

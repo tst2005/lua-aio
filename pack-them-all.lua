@@ -280,6 +280,8 @@ local function main(arg)
 	end
 end
 local _M = {}
+_M._VERSION = "lua-aio 0.1"
+_M._LICENSE = "MIT"
 _M.main = function(...)
 	local result = {}
 	output = function(data)
