@@ -14,7 +14,7 @@
 local deny_package_access = false
 local module_with_integrity_check = false
 local modcount = 0
-local mode = "normal"
+local mode = "lua"
 
 --local argv = arg and (#arg -1) or 0
 local io = require"io"
@@ -228,7 +228,7 @@ local function main(arg)
 		elseif a1 == "--mod" then
 			local name=arg[i]; shift()
 			local file=arg[i]; shift()
-			if mode == "normal" then
+			if mode == "lua" then
 				pack_module(name, file)
 			elseif mode == "raw" then
 				rawpack_module(name, file)
@@ -245,7 +245,7 @@ local function main(arg)
 			rawpack_module(name, file)
 		elseif a1 == "--mode" then
 			local newmode=arg[i]; shift()
-			if newmode == "normal" or newmode == "raw" then
+			if newmode == "lua" or newmode == "raw" then
 				mode = newmode
 			else
 				error("invalid mode", 2)
