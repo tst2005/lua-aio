@@ -99,9 +99,32 @@ local function autoeol(data)
 	return data
 end
 
+-- TODO: embedding with rawdata (string) and eval the lua code at runtime with loadstring
 local function rawpack_module(modname, modpath)
-	-- not implemented yet
-	-- TODO: embedding with rawdata (string) and eval the lua code at runtime with load or loadstring
+	assert(modname)
+	assert(modpath)
+
+	local b = [[do local loadstring=loadstring;(function(name, rawcode)require"package".preload[name]=function(...)return assert(loadstring(rawcode))(...)end;end)("]] .. modname .. [[", (]].."[[\n"
+	local e = "]]"..[[):gsub('\\([%]%[])','%1'))end]]
+
+--	if deny_package_access then
+--		b = [[do require("package").preload["]] .. modname .. [["] = (function() local package;return function(...)]]
+--		e = [[end end)()end;]]
+--	end
+
+	if module_with_integrity_check then
+		e = e .. [[__ICHECK__[#__ICHECK__+1] = ]].."'"..modname.."'"..[[;__ICHECKCOUNT__=(__ICHECKCOUNT__+1);]]
+	end
+
+	-- TODO: improve: include in function code a comment with the name of original file (it will be shown in the trace error message) ?
+	-- like [[...-- <pack ]]..modname..[[> --
+	-- .. "-- <pack "..modname.."> --".."\n"
+	print_no_nl(
+		b
+		.. autoeol(extractshebang(cat(modpath))):gsub('([%]%[])','\\%1')
+		.. e .."\n"
+	)
+	modcount = modcount + 1 -- for integrity check
 end
 
 local function pack_module(modname, modpath)
