@@ -1,20 +1,27 @@
-# luamodules-all-in-one-file
+# Lua All In One
 
-Embeding all lua modules/files of a project into only one lua file
+Embeding lot of lua modules/files into only one lua file.
 
-Note: it's an Betaversion.
+Note: it's an Beta version.
 
 # Why using this util ?
 
-I currently use this util in 2 projects :
+I initialy create this util for 2 projects :
  * for Alephone Game
   because the Lua Script support only support ONE Lua file to load.
   Having one big file is too ugly for me, I prefere split all part to lua modules and generate the big one at the end.
  * In fakelove
  A implementation of LÖVE in pur lua (without graphical stuff) usefull for server side code game.
 
+# More usefull than expected
+
+Now I use it to :
+ * bundle third party module
+ * bundle [featured.lua](https://github.com/tst2005/mom/blob/master/featured.lua) of the [mom project](https://github.com/tst2005/mom)
 
 # How it run
+
+## Command line support
 
 This util catch each module files and push their contents inside the preload table.
 By this way we can use `require("modulename")` like usual. 
@@ -23,21 +30,32 @@ By this way we can use `require("modulename")` like usual.
 
 ```
 $ ./pack-them-all.lua <arguments...>
-or
-$ ./pack-them-all.sh <arguments...>
 ```
 
 ```
-arguments :
-  --shebang <path/to/file>
-  --mod <modulename> <path/to/modulefile.lua>
-  --code <path/to/code1.lua>
-  --file <path/to/file>           *experimental*
-  --autoaliases                   *experimental*
+Options and arguments :
+  --shebang               <path/to/file.lua>
+  --code                  <path/to/file.lua>
+  --codehead <n>          <path/to/file.lua>
+  --mod      <modulename> <path/to/modulefile.lua>
+  --rawmod   <modulename> <path/to/modulefile.lua>
+  --luamod   <modulename> <path/to/modulefile.lua>
+  ---mode    'lua'|'raw'
+  --autoaliases
+  --icheckinit
+  --icheck
+  --require  <modulename>
+  --file <path/to/file>
   -- [<file1> [<file2> [...]]]
 ```
 
-# autoaliases feature
+# Sample of use
+
+See files inside the sample directory
+
+# Special feature
+
+## autoaliases feature
 
 In usual case a module named `abc` defined in an `abc/init.lua` file should be called with an `abc` name : `require("abc")`
 because the usual loader use package.path to search `?.lua` or `?/init.lua`.
@@ -47,10 +65,9 @@ The preload system does not use path.
 The --autoaliases make aliases for all registred modules named with the `.init` suffix to be called without the suffix.
 Must be used at the end (when module will be already registred in preload table).
 
+## Integrity Check
 
-# Sample of use
-
-See files inside the sample directory
+This feature was introduce for my-self to be able to control how many module have been packed and how many we get at runtime.
 
 # TODO
 
@@ -64,6 +81,7 @@ See files inside the sample directory
 ```
 do ..... function(...)-- <pack something.init> 9233 --
 ```
+
 
 ## v-next
  * recode the whole .lua to be a lua module
