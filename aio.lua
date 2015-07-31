@@ -194,7 +194,7 @@ do -- preload auto aliasing...
 		if k:find("%.init$") then
 			local short = k:gsub("%.init$", "")
 			if not p[short] then
-			p[short] = v
+				p[short] = v
 			end
 		end
 	end
