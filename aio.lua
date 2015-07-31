@@ -1,5 +1,17 @@
-#!/usr/bin/env lua
-
+#!/bin/sh
+_=[[
+        for name in luajit lua5.3 lua-5.3 lua5.2 lua-5.2 lua5.1 lua-5.1 lua; do
+                : ${LUA:="$(command -v "$name")"}
+        done
+        if [ -z "$LUA" ]; then
+                echo >&2 "ERROR: lua interpretor not found"
+                exit 1
+        fi
+        LUA_PATH='./?.lua;./?/init.lua;./lib/?.lua;./lib/?/init.lua;;'
+        exec "$LUA" "$0" "$@"
+        exit $?
+]]
+_=nil
 --[[--------------------------------------------------------------------------
 	-- Dragoon Framework - A Framework for Lua/LOVE --
 	-- Copyright (c) 2014-2015 TsT worldmaster.fr <tst2005@gmail.com> --
@@ -116,10 +128,10 @@ local function rawpack_module(modname, modpath)
 	end
 
 	-- TODO: improve: include in function code a comment with the name of original file (it will be shown in the trace error message) ?
-	-- like [[...-- <pack ]]..modname..[[> --
-	-- .. "-- <pack "..modname.."> --".."\n"
+	local d = "-- <pack "..modname.."> --".."\n" -- error message keep the first 45 chars max
 	print_no_nl(
 		b
+		.. d
 		.. autoeol(extractshebang(cat(modpath))):gsub('([%]%[])','\\%1')
 		.. e .."\n"
 	)
@@ -207,6 +219,44 @@ end
 ]])
 end
 
+local function cmd_shebang(file)
+	local shebang = get_shebang(head(file, 1).."\n")
+	print_no_nl( shebang and shebang.."\n" or "")
+end
+
+local function cmd_luamod(name, file)
+	pack_module(name, file)
+end
+
+local function cmd_rawmod(name, file)
+	rawpack_module(name, file)
+end
+
+local function cmd_mod(name, file)
+	if mode == "lua" then
+		pack_module(name, file)
+	elseif mode == "raw" then
+		rawpack_module(name, file)
+	else
+		error("invalid mode when using --mod", 2)
+	end
+end
+
+local function cmd_code(file)
+	print_no_nl(dropshebang(cat(file)))
+end
+local function cmd_codehead(n, file)
+	print_no_nl( dropshebang( head(file, n).."\n" ) )
+end
+
+local function cmd_mode(newmode)
+	if newmode == "lua" or newmode == "raw" then
+		mode = newmode
+	else
+		error("invalid mode", 2)
+	end
+end
+
 local function main(arg)
 	local i = 1
 	local function shift(n)
@@ -214,42 +264,33 @@ local function main(arg)
 	end
 	while i <= #arg do
 		local a1 = arg[i]; i=i+1
-		if a1 == "--code" then
+		if a1 == "--shebang" then
 			local file=arg[i]; shift()
-			print_no_nl(dropshebang(cat(file)))
-		elseif a1 == "--codehead" then
-			local n=arg[i]; shift()
-			local file=arg[i]; shift()
-			print_no_nl( dropshebang( head(file, n).."\n" ) )
-		elseif a1 == "--shebang" then
-			local file=arg[i]; shift()
-			local shebang = get_shebang(head(file, 1).."\n")
-			print_no_nl( shebang and shebang.."\n" or "")
-		elseif a1 == "--mod" then
-			local name=arg[i]; shift()
-			local file=arg[i]; shift()
-			if mode == "lua" then
-				pack_module(name, file)
-			elseif mode == "raw" then
-				rawpack_module(name, file)
-			else
-				error("invalid mode when using --mod", 2)
-			end
+			cmd_shebang(file)
 		elseif a1 == "--luamod" then
 			local name=arg[i]; shift()
 			local file=arg[i]; shift()
-			pack_module(name, file)
+			cmd_luamod(name, file)
 		elseif a1 == "--rawmod" then
 			local name=arg[i]; shift()
 			local file=arg[i]; shift()
-			rawpack_module(name, file)
+			cmd_rawmod(name, file)
+		elseif a1 == "--mod" then
+			local name=arg[i]; shift()
+			local file=arg[i]; shift()
+			cmd_mod(name, file)
+		elseif a1 == "--code" then
+			local file=arg[i]; shift()
+			cmd_code(file)
+		elseif a1 == "--codehead" then
+			local n=arg[i]; shift()
+			local file=arg[i]; shift()
+			cmd_codehead(n, file)
 		elseif a1 == "--mode" then
 			local newmode=arg[i]; shift()
-			if newmode == "lua" or newmode == "raw" then
-				mode = newmode
-			else
-				error("invalid mode", 2)
-			end
+			cmd_mode(newmode)
+
+
 		elseif a1 == "--file" then
 			local filename = arg[i]; shift()
 			local filepath = arg[i]; shift()
@@ -293,5 +334,12 @@ end
 if type(arg) == "table" and #arg >= 1 and arg[1]:find("^%-%-") then
 	io.write(_M.main(arg))
 end
+
+_M.shebang  = cmd_shebang
+_M.rawmod   = cmd_rawmod
+_M.mod      = cmd_mod
+_M.code     = cmd_code
+_M.codehead = cmd_codehead
+_M.mode     = cmd_mode
 
 return _M
