@@ -178,7 +178,7 @@ local function datapack_with_unpackcode(data, tagsep)
 	return "(" .. datapack(data:gsub("%]", "\\]"), tagsep) .. ")" .. [[:gsub( "\\%]", "]" )]]
 end
 
-local function pack_file(filename, filepath)
+local function pack_vfile(filename, filepath)
 	local data = cat(filepath)
 	data = "--fakefs ".. filename .. "\n" .. data
 	local code = "do local p=require'package';p.fakefs=(p.fakefs or {});p.fakefs[\"" .. filename .. "\"]=" .. datapack_with_unpackcode(data, '==') .. ";end\n"
@@ -227,11 +227,9 @@ end
 local function cmd_luamod(name, file)
 	pack_module(name, file)
 end
-
 local function cmd_rawmod(name, file)
 	rawpack_module(name, file)
 end
-
 local function cmd_mod(name, file)
 	if mode == "lua" then
 		pack_module(name, file)
@@ -241,14 +239,12 @@ local function cmd_mod(name, file)
 		error("invalid mode when using --mod", 2)
 	end
 end
-
 local function cmd_code(file)
 	print_no_nl(dropshebang(cat(file)))
 end
 local function cmd_codehead(n, file)
 	print_no_nl( dropshebang( head(file, n).."\n" ) )
 end
-
 local function cmd_mode(newmode)
 	if newmode == "lua" or newmode == "raw" then
 		mode = newmode
@@ -256,6 +252,29 @@ local function cmd_mode(newmode)
 		error("invalid mode", 2)
 	end
 end
+local function cmd_vfile(filename, filepath)
+	pack_vfile(filename, filepath)
+end
+local function cmd_autoaliases()
+	autoaliases_code()
+end
+local function cmd_icheck()
+	integrity_check_code()
+end
+local function cmd_icheckinit()
+	print_no_nl("local __ICHECK__ = {};__ICHECKCOUNT__=0;\n")
+	module_with_integrity_check = true
+end
+local function cmd_require(modname)
+	assert(modname:find('^[a-zA-Z0-9%._-]+$'), "error: invalid modname")
+	local code = [[require("]]..modname..[[")]] -- FIXME: quote
+	print_no_nl( code.."\n" )
+end
+local function cmd_luacode(data)
+	local code = data -- FIXME: quote
+	print_no_nl( code.."\n" )
+end
+
 
 local function main(arg)
 	local i = 1
@@ -289,24 +308,22 @@ local function main(arg)
 		elseif a1 == "--mode" then
 			local newmode=arg[i]; shift()
 			cmd_mode(newmode)
-
-
-		elseif a1 == "--file" then
+		elseif a1 == "--vfile" then
 			local filename = arg[i]; shift()
 			local filepath = arg[i]; shift()
-			pack_file(filename, filepath)
+			cmd_vfile(filename, filepath)
 		elseif a1 == "--autoaliases" then
-			autoaliases_code()
+			cmd_autoaliases()
 		elseif a1 == "--icheck" then
-			integrity_check_code()
+			cmd_icheck()
 		elseif a1 == "--icheckinit" then
-			print_no_nl("local __ICHECK__ = {};__ICHECKCOUNT__=0;\n")
-			module_with_integrity_check = true
+			cmd_ichechinit()
 		elseif a1 == "--require" then
 			local modname = arg[i]; shift()
-			assert(modname:find('^[a-zA-Z0-9%._-]+$'), "error: invalid modname")
-			local code = [[require("]]..modname..[[")]]
-			print_no_nl( code.."\n" )
+			cmd_require(modname)
+		elseif a1 == "--luacode" then
+			local data = arg[i]; shift()
+			cmd_luacode(data)
 		elseif a1 == "--" then
 			break
 		else
@@ -321,7 +338,7 @@ local function main(arg)
 	end
 end
 local _M = {}
-_M._VERSION = "lua-aio 0.1"
+_M._VERSION = "lua-aio 0.2"
 _M._LICENSE = "MIT"
 _M.main = function(...)
 	local result = {}
@@ -335,11 +352,18 @@ if type(arg) == "table" and #arg >= 1 and arg[1]:find("^%-%-") then
 	io.write(_M.main(arg))
 end
 
-_M.shebang  = cmd_shebang
-_M.rawmod   = cmd_rawmod
-_M.mod      = cmd_mod
-_M.code     = cmd_code
-_M.codehead = cmd_codehead
-_M.mode     = cmd_mode
+_M.shebang	= cmd_shebang
+_M.luamod	= cmd_luamod
+_M.rawmod	= cmd_rawmod
+_M.mod		= cmd_mod
+_M.code		= cmd_code
+_M.codehead	= cmd_codehead
+_M.mode		= cmd_mode
+_M.vfile	= cmd_vfile
+_M.autoaliases	= cmd_autoaliases
+_M.icheck	= cmd_icheck
+_M.ichechinit	= cmd_icheckinit
+_M.require	= cmd_require
+_M.luacode	= cmd_luacode
 
 return _M
