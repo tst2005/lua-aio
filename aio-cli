@@ -32,6 +32,23 @@ local mode = "lua"
 local io = require"io"
 local output=io.write
 
+local aio = require "aio"
+
+local cmd_shebang = aio.shebang
+local cmd_luamod = aio.luamod
+local cmd_rawmod = aio.rawmod
+local cmd_mod = aio.mod
+local cmd_code = aio.code
+local cmd_codehead = aio.codehead
+local cmd_mode = aio.mode
+local cmd_vfile = aio.vfile
+local cmd_autoaliases = aio.autoaliases
+local cmd_icheck = aio.icheck
+local cmd_icheckinit = aio.ichechinit
+local cmd_require = aio.require
+local cmd_luacode = aio.luacode
+
+--[========[
 local function cat(dirfile)
 	assert(dirfile)
 	local fd = assert(io.open(dirfile, "r"))
@@ -306,8 +323,9 @@ local function cmd_luacode(data)
 	local code = data -- FIXME: quote
 	print_no_nl( code.."\n" )
 end
+]========]--
 
---[====[
+
 local function main(arg)
 	local i = 1
 	local function shift(n)
@@ -369,36 +387,12 @@ local function main(arg)
 		end
 	end
 end
-]====]--
-
-local _M = {}
-_M._VERSION = "lua-aio 0.2"
-_M._LICENSE = "MIT"
---_M.main = function(...)
---	local result = {}
---	output = function(data)
---		result[#result+1] = data
---	end
---	main(arg)
---	return table.concat(result, "")
---end
-
 --if type(arg) == "table" and #arg >= 1 and arg[1]:find("^%-%-") then
---	io.write(_M.main(arg))
+	local result = {}
+	output = function(data)
+		result[#result+1] = data
+	end
+	main(arg)
+	io.write( table.concat(result, "") )
 --end
 
-_M.shebang	= cmd_shebang
-_M.luamod	= cmd_luamod
-_M.rawmod	= cmd_rawmod
-_M.mod		= cmd_mod
-_M.code		= cmd_code
-_M.codehead	= cmd_codehead
-_M.mode		= cmd_mode
-_M.vfile	= cmd_vfile
-_M.autoaliases	= cmd_autoaliases
-_M.icheck	= cmd_icheck
-_M.ichechinit	= cmd_icheckinit
-_M.require	= cmd_require
-_M.luacode	= cmd_luacode
-
-return _M
