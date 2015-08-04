@@ -30,7 +30,11 @@ local mode = "lua"
 
 --local argv = arg and (#arg -1) or 0
 local io = require"io"
-local output=io.write
+local result = {}
+local function output(data)
+	result[#result+1] = data
+end
+
 
 local function cat(dirfile)
 	assert(dirfile)
@@ -115,7 +119,7 @@ local function rawpack_module(modname, modpath)
 	assert(modname)
 	assert(modpath)
 
-	local b = [[do local loadstring=loadstring;(function(name, rawcode)require"package".preload[name]=function(...)return assert(loadstring(rawcode))(...)end;end)("]] .. modname .. [[", (]].."[[\n"
+	local b = [[do local loadstring=loadstring;(function(name, rawcode)require"package".preload[name]=function(...)return assert(loadstring(rawcode))(...)end;end)("]] .. modname .. [[", (]].."[["
 	local e = "]]"..[[):gsub('\\([%]%[])','%1'))end]]
 
 --	if deny_package_access then
@@ -128,36 +132,39 @@ local function rawpack_module(modname, modpath)
 	end
 
 	-- TODO: improve: include in function code a comment with the name of original file (it will be shown in the trace error message) ?
-	local d = "-- <pack "..modname.."> --".."\n" -- error message keep the first 45 chars max
+	local d = "-- <pack "..modname.."> --" -- error message keep the first 45 chars max
 	print_no_nl(
-		b
-		.. d
+		b .. d .."\n"
 		.. autoeol(extractshebang(cat(modpath))):gsub('([%]%[])','\\%1')
 		.. e .."\n"
 	)
 	modcount = modcount + 1 -- for integrity check
 end
 
+local rawpack2_init_done = false
+local rawpack2_finish_done = false
+
+
 local function rawpack2_init()
-	print_no_nl([[do local sources = {}]])
+	print_no_nl([[do local sources = {};]])
 end
 
-
-local function rawpack2(name, path)
---[===[
-sources["test"]=[[
-local _M = {}
-_M._VERSION = "test 0.0.1"
-function _M:print()
-        print(self._VERSION)
-end
-return _M
-]]
-
-sources["test2"]=[[
-return {print=function() print("test2 0.0.1") end}
-]]
-]===]--
+local function rawpack2_module(modname, modpath)
+	assert(modname)
+	assert(modpath)
+	if not rawpack2_init_done then
+		rawpack2_init_done = not rawpack2_init_done
+		rawpack2_init()
+	end
+	local b = [[sources["]] .. modname .. [["]=(]].."[["
+	local e = "]]"..[[):gsub('\\([%]%[])','%1')]]
+	local d = "-- <pack "..modname.."> --" -- error message keep the first 45 chars max
+	print_no_nl(
+		b .. d .."\n"
+		.. autoeol(extractshebang(cat(modpath))):gsub('([%]%[])','\\%1')
+		.. e .."\n"
+	)
+	--modcount = modcount + 1 -- for integrity check
 end
 
 local function rawpack2_finish()
@@ -168,6 +175,13 @@ for name, rawcode in pairs(sources) do preload[name]=function(...)return loadstr
 end;
 ]]
 )
+end
+
+local function finish()
+	if rawpack2_init_done and not rawpack2_finish_done then
+		rawpack2_finish_done = not rawpack2_finish_done
+		rawpack2_finish()
+	end
 end
 
 local function pack_module(modname, modpath)
@@ -260,13 +274,19 @@ local function cmd_luamod(name, file)
 	pack_module(name, file)
 end
 local function cmd_rawmod(name, file)
-	rawpack_module(name, file)
+	if mode == "raw2" then
+		rawpack2_module(name, file)
+	else
+		rawpack_module(name, file)
+	end
 end
 local function cmd_mod(name, file)
 	if mode == "lua" then
 		pack_module(name, file)
 	elseif mode == "raw" then
 		rawpack_module(name, file)
+	elseif mode == "raw2" then
+		rawpack2_module(name, file)
 	else
 		error("invalid mode when using --mod", 2)
 	end
@@ -278,7 +298,8 @@ local function cmd_codehead(n, file)
 	print_no_nl( dropshebang( head(file, n).."\n" ) )
 end
 local function cmd_mode(newmode)
-	if newmode == "lua" or newmode == "raw" then
+	local modes = {lua=true, raw=true, raw2=true}
+	if modes[newmode] then
 		mode = newmode
 	else
 		error("invalid mode", 2)
@@ -306,86 +327,15 @@ local function cmd_luacode(data)
 	local code = data -- FIXME: quote
 	print_no_nl( code.."\n" )
 end
-
---[====[
-local function main(arg)
-	local i = 1
-	local function shift(n)
-		i=i+(n or 1)
-	end
-	while i <= #arg do
-		local a1 = arg[i]; i=i+1
-		if a1 == "--shebang" then
-			local file=arg[i]; shift()
-			cmd_shebang(file)
-		elseif a1 == "--luamod" then
-			local name=arg[i]; shift()
-			local file=arg[i]; shift()
-			cmd_luamod(name, file)
-		elseif a1 == "--rawmod" then
-			local name=arg[i]; shift()
-			local file=arg[i]; shift()
-			cmd_rawmod(name, file)
-		elseif a1 == "--mod" then
-			local name=arg[i]; shift()
-			local file=arg[i]; shift()
-			cmd_mod(name, file)
-		elseif a1 == "--code" then
-			local file=arg[i]; shift()
-			cmd_code(file)
-		elseif a1 == "--codehead" then
-			local n=arg[i]; shift()
-			local file=arg[i]; shift()
-			cmd_codehead(n, file)
-		elseif a1 == "--mode" then
-			local newmode=arg[i]; shift()
-			cmd_mode(newmode)
-		elseif a1 == "--vfile" then
-			local filename = arg[i]; shift()
-			local filepath = arg[i]; shift()
-			cmd_vfile(filename, filepath)
-		elseif a1 == "--autoaliases" then
-			cmd_autoaliases()
-		elseif a1 == "--icheck" then
-			cmd_icheck()
-		elseif a1 == "--icheckinit" then
-			cmd_ichechinit()
-		elseif a1 == "--require" then
-			local modname = arg[i]; shift()
-			cmd_require(modname)
-		elseif a1 == "--luacode" then
-			local data = arg[i]; shift()
-			cmd_luacode(data)
-		elseif a1 == "--" then
-			break
-		else
-			error("error "..a1)
-		end
-	end
-
-	if i <= #arg then
-		for j=i,#arg,1 do
-			print_no_nl(cat(arg[j]))
-		end
-	end
+local function cmd_finish()
+	finish()
+	io.write(table.concat(result or {}, ""))
+	result = nil
 end
-]====]--
 
 local _M = {}
-_M._VERSION = "lua-aio 0.2"
+_M._VERSION = "lua-aio 0.3"
 _M._LICENSE = "MIT"
---_M.main = function(...)
---	local result = {}
---	output = function(data)
---		result[#result+1] = data
---	end
---	main(arg)
---	return table.concat(result, "")
---end
-
---if type(arg) == "table" and #arg >= 1 and arg[1]:find("^%-%-") then
---	io.write(_M.main(arg))
---end
 
 _M.shebang	= cmd_shebang
 _M.luamod	= cmd_luamod
@@ -400,5 +350,6 @@ _M.icheck	= cmd_icheck
 _M.ichechinit	= cmd_icheckinit
 _M.require	= cmd_require
 _M.luacode	= cmd_luacode
+_M.finish	= cmd_finish
 
 return _M
