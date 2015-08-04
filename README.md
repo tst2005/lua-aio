@@ -16,9 +16,9 @@ I initialy create this util for 2 projects :
 # More usefull than expected
 
 Now I use it to :
- * test on big projet like : hate with the hate-allinone.lua result.
- * bundle third party module like : lunajson, ...
- * bundle [featured.lua](https://github.com/tst2005/mom/blob/master/featured.lua) of the [mom project](https://github.com/tst2005/mom)
+ * on [hate](https://github.com/tst2005/hate/tree/allinone) a clone of love2d but with LuaJIT
+ * bundle third party module like : [lunajson](https://github.com/tst2005/lunajson)
+ * bundle my [mom.lua](https://github.com/tst2005/mom)
 
 # How it run
 
