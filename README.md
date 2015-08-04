@@ -24,10 +24,46 @@ Now I use it to :
 
 ## Command line support
 
+You should the `aio-cli` and use command line options.
+Sample of self made aio-cli all-in-one :
+```
+./aio-cli \
+--shebang aio-cli \
+--rawmod "aio" aio.lua \
+--code aio-cli \
+> aio-cli.tmp
+```
+
+Note: I move to lua use, more than shell use.
+
+## In lua
+
 This util catch each module files and push their contents inside the preload table.
 By this way we can use `require("modulename")` like usual. 
 
+```
+local aio = require "aio"
+aio.shebang("aio-cli")
+aio.rawmod("aio", "aio.lua")
+aio.code("aio-cli")
+```
+
+# hybrid mode
+
+Call the lua interpretor in shell and evaluate a big option :
+```
+lua -l aio -e '
+local aio = require "aio"
+aio.shebang("aio-cli")
+aio.rawmod("aio", "aio.lua")
+aio.code("aio-cli")
+' > aio-cli.tmp
+```
+
+
 # Documentation
+
+Note: this doc is a little obsolete ...
 
 ```
 $ ./pack-them-all.lua <arguments...>
@@ -82,9 +118,5 @@ This feature was introduce for my-self to be able to control how many module hav
 ```
 do ..... function(...)-- <pack something.init> 9233 --
 ```
-
-
-## v-next
- * recode the whole .lua to be a lua module
- * (?) use and embed a getopt or argparse module to manage --options
+ * (?) use and embed a getopt or argparse or cliargs module to manage --options
 
