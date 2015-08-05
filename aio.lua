@@ -154,7 +154,7 @@ local rawpack2_finish_done = false
 
 
 local function rawpack2_init()
-	print_no_nl([[do local sources = {};]])
+	print_no_nl([[do local sources, priorities = {}, {};]])
 end
 
 local function rawpack2_module(modname, modpath)
@@ -205,7 +205,7 @@ if not pcall(function() add = require"aioruntime".add end) then
                 preload[name] = function(...) return loadstring(rawcode)(...) end
         end
 end
-for name, rawcode in pairs(sources) do add(name, rawcode) end
+for name, rawcode in pairs(sources) do add(name, rawcode, priorities[name]) end
 end;
 ]]
 )
