@@ -195,6 +195,22 @@ end;
 )
 end
 
+local function rawpack2_finish()
+	print_no_nl(
+[[
+local add
+if not pcall(function() add = require"aioruntime".add end) then
+        local loadstring=loadstring; local preload = require"package".preload
+        add = function(name, rawcode)
+                preload[name] = function(...) return loadstring(rawcode)(...) end
+        end
+end
+for name, rawcode in pairs(sources) do add(name, rawcode) end
+end;
+]]
+)
+end
+
 local function finish()
 	if rawpack2_init_done and not rawpack2_finish_done then
 		rawpack2_finish_done = not rawpack2_finish_done
