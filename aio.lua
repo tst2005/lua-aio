@@ -124,8 +124,8 @@ local function rawpack_module(modname, modpath)
 	local unquotecode = [[:gsub('\\([%]%[])','%1')]]
 
 -- quoting solution 2 : prefix the pattern of '[===[', ']===]' with '\' ; FIXME: for now it quote ]===] or [===] or ]===[ or [===[
-	local quote       = function(s) return s:gsub('([%]%[]===[%]%[])','\\%1') end
-	local unquotecode = [[:gsub('\\([%]%[]===[%]%[])','%1')]]
+--	local quote       = function(s) return s:gsub('([%]%[]===[%]%[])','\\%1') end
+--	local unquotecode = [[:gsub('\\([%]%[]===[%]%[])','%1')]]
 
 	local b = [[do local loadstring=loadstring;(function(name, rawcode)require"package".preload[name]=function(...)return assert(loadstring(rawcode))(...)end;end)("]] .. modname .. [[", (]].."[["
 	local e = "]])".. unquotecode .. ")end"
@@ -160,16 +160,26 @@ end
 local function rawpack2_module(modname, modpath)
 	assert(modname)
 	assert(modpath)
+
+-- quoting solution 1 : prefix all '[', ']' with '\'
+	local quote       = function(s) return s:gsub('([%]%[])','\\%1') end
+	local unquotecode = [[:gsub('\\([%]%[])','%1')]]
+
+-- quoting solution 2 : prefix the pattern of '[===[', ']===]' with '\' ; FIXME: for now it quote ]===] or [===] or ]===[ or [===[
+	local quote       = function(s) return s:gsub('([%]%[]===[%]%[])','\\%1') end
+	local unquotecode = [[:gsub('\\([%]%[]===[%]%[])','%1')]]
+
 	if not rawpack2_init_done then
 		rawpack2_init_done = not rawpack2_init_done
 		rawpack2_init()
 	end
-	local b = [[sources["]] .. modname .. [["]=(]].."[["
-	local e = "]]"..[[):gsub('\\([%]%[])','%1')]]
+	local b = [[sources["]] .. modname .. [["]=(]].."[===["
+	local e = "]===])".. unquotecode
+
 	local d = "-- <pack "..modname.."> --" -- error message keep the first 45 chars max
 	print_no_nl(
 		b .. d .."\n"
-		.. autoeol(extractshebang(cat(modpath))):gsub('([%]%[])','\\%1')
+		.. quote(autoeol(extractshebang(cat(modpath))))
 		.. e .."\n"
 	)
 	--modcount = modcount + 1 -- for integrity check
@@ -342,7 +352,7 @@ local function cmd_finish()
 end
 
 local _M = {}
-_M._VERSION = "lua-aio 0.3"
+_M._VERSION = "lua-aio 0.4"
 _M._LICENSE = "MIT"
 
 _M.shebang	= cmd_shebang
