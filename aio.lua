@@ -166,14 +166,14 @@ local function rawpack2_module(modname, modpath)
 	local unquotecode = [[:gsub('\\([%]%[])','%1')]]
 
 -- quoting solution 2 : prefix the pattern of '[===[', ']===]' with '\' ; FIXME: for now it quote ]===] or [===] or ]===[ or [===[
-	local quote       = function(s) return s:gsub('([%]%[]===[%]%[])','\\%1') end
-	local unquotecode = [[:gsub('\\([%]%[]===[%]%[])','%1')]]
+	local quote       = function(s) return s:gsub('([%]%[]===)([%]%[])','\\%1\\%2') end
+	local unquotecode = [[:gsub('\\([%]%[]===)\\([%]%[])','%1%2')]]
 
 	if not rawpack2_init_done then
 		rawpack2_init_done = not rawpack2_init_done
 		rawpack2_init()
 	end
-	local b = [[sources["]] .. modname .. [["]=(]].."[===["
+	local b = [[assert(not sources["]] .. modname .. [["])]]..[[sources["]] .. modname .. [["]=(]].."[===["
 	local e = "]===])".. unquotecode
 
 	local d = "-- <pack "..modname.."> --" -- error message keep the first 45 chars max
@@ -185,15 +185,15 @@ local function rawpack2_module(modname, modpath)
 	--modcount = modcount + 1 -- for integrity check
 end
 
-local function rawpack2_finish()
-	print_no_nl(
-[[
-local loadstring=loadstring; local preload = require"package".preload
-for name, rawcode in pairs(sources) do preload[name]=function(...)return loadstring(rawcode)(...)end end
-end;
-]]
-)
-end
+--local function rawpack2_finish()
+--	print_no_nl(
+--[[
+--local loadstring=loadstring; local preload = require"package".preload
+--for name, rawcode in pairs(sources) do preload[name]=function(...)return loadstring(rawcode)(...)end end
+--end;
+--]]
+--)
+--end
 
 local function rawpack2_finish()
 	print_no_nl(
@@ -202,7 +202,11 @@ local add
 if not pcall(function() add = require"aioruntime".add end) then
         local loadstring=loadstring; local preload = require"package".preload
         add = function(name, rawcode)
-                preload[name] = function(...) return loadstring(rawcode)(...) end
+		if not preload[name] then
+        	        preload[name] = function(...) return loadstring(rawcode)(...) end
+		else
+			print("WARNING: overwrite "..name)
+		end
         end
 end
 for name, rawcode in pairs(sources) do add(name, rawcode, priorities[name]) end

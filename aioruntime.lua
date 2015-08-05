@@ -4,9 +4,13 @@ local loadstring=loadstring; local preload = require"package".preload
 
 local _M = {
 	add = function(name, rawcode, pri)
-		print("add", name, #rawcode, pri)
+		--print("add", name, #rawcode, pri)
 		local p = priorities[name]
-		if not pri or p and (pri or 0) > p then
+		if not preload[name] or p and (pri or 0) > p then
+			priorities[name] = pri or 0
+			if preload[name] then
+				print( "overwrite "..name)
+			end
 			preload[name] = function(...) return loadstring(rawcode)(...) end
 		else
 			print( ("module %q not overwritten"):format(name), "p", p, "pri", pri )
