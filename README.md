@@ -19,7 +19,9 @@ Now I use it for :
  * [hate](https://github.com/tst2005/hate/tree/allinone) : a clone of love2d but with LuaJIT
  * [lunajson](https://github.com/tst2005/lunajson) : a json module
  * [makefly](https://github.com/tst2005/makefly) : a command line utility to make html static page
+ * my small [xor](https://github.com/tst2005/xor) utility
  * my [mom.lua](https://github.com/tst2005/mom) project
+ * my [lua-isolation](https://github.com/tst2005/lua-isolation)
 
 
 # How it run
