@@ -15,14 +15,18 @@ I initialy create this util for 2 projects :
 
 # More usefull than expected
 
-Now I use it to :
- * on [hate](https://github.com/tst2005/hate/tree/allinone) a clone of love2d but with LuaJIT
- * bundle third party module like : [lunajson](https://github.com/tst2005/lunajson)
- * bundle my [mom.lua](https://github.com/tst2005/mom)
+Now I use it for :
+ * [hate](https://github.com/tst2005/hate/tree/allinone) : a clone of love2d but with LuaJIT
+ * [lunajson](https://github.com/tst2005/lunajson) : a json module
+ * [makefly](https://github.com/tst2005/makefly) : a command line utility to make html static page
+ * my [mom.lua](https://github.com/tst2005/mom) project
+
 
 # How it run
 
 ## Command line support
+
+Note: this way become obsolete?
 
 You should the `aio-cli` and use command line options.
 Sample of self made aio-cli all-in-one :
@@ -39,7 +43,7 @@ Note: I move to lua use, more than shell use.
 ## In lua
 
 This util catch each module files and push their contents inside the preload table.
-By this way we can use `require("modulename")` like usual. 
+By this way we can use `require("aio")` like any other lua module.
 
 ```
 local aio = require "aio"
