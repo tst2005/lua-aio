@@ -119,8 +119,16 @@ local function rawpack_module(modname, modpath)
 	assert(modname)
 	assert(modpath)
 
+-- quoting solution 1 : prefix all '[', ']' with '\'
+	local quote       = function(s) return s:gsub('([%]%[])','\\%1') end
+	local unquotecode = [[:gsub('\\([%]%[])','%1')]]
+
+-- quoting solution 2 : prefix the pattern of '[===[', ']===]' with '\' ; FIXME: for now it quote ]===] or [===] or ]===[ or [===[
+	local quote       = function(s) return s:gsub('([%]%[]===[%]%[])','\\%1') end
+	local unquotecode = [[:gsub('\\([%]%[]===[%]%[])','%1')]]
+
 	local b = [[do local loadstring=loadstring;(function(name, rawcode)require"package".preload[name]=function(...)return assert(loadstring(rawcode))(...)end;end)("]] .. modname .. [[", (]].."[["
-	local e = "]]"..[[):gsub('\\([%]%[])','%1'))end]]
+	local e = "]])".. unquotecode .. ")end"
 
 --	if deny_package_access then
 --		b = [[do require("package").preload["]] .. modname .. [["] = (function() local package;return function(...)]]
@@ -135,7 +143,7 @@ local function rawpack_module(modname, modpath)
 	local d = "-- <pack "..modname.."> --" -- error message keep the first 45 chars max
 	print_no_nl(
 		b .. d .."\n"
-		.. autoeol(extractshebang(cat(modpath))):gsub('([%]%[])','\\%1')
+		.. quote(autoeol(extractshebang(cat(modpath)))) --:gsub('([%]%[])','\\%1')
 		.. e .."\n"
 	)
 	modcount = modcount + 1 -- for integrity check
@@ -330,7 +338,7 @@ end
 local function cmd_finish()
 	finish()
 	io.write(table.concat(result or {}, ""))
-	result = nil
+	result = {}
 end
 
 local _M = {}
