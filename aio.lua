@@ -203,7 +203,7 @@ if not pcall(function() add = require"aioruntime".add end) then
         local loadstring=loadstring; local preload = require"package".preload
         add = function(name, rawcode)
 		if not preload[name] then
-        	        preload[name] = function(...) return loadstring(rawcode)(...) end
+		        preload[name] = function(...) return loadstring(rawcode)(...) end
 		else
 			print("WARNING: overwrite "..name)
 		end
