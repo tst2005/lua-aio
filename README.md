@@ -15,7 +15,7 @@ I initialy create this util for 2 projects :
 
 # More usefull than expected
 
-Now I use it for :
+Now I use it for lot of projects.
  * [hate](https://github.com/tst2005/hate/tree/allinone) : a clone of love2d but with LuaJIT
  * [lunajson](https://github.com/tst2005/lunajson) : a json module
  * [makefly](https://github.com/tst2005/makefly) : a command line utility to make html static page
@@ -23,6 +23,7 @@ Now I use it for :
  * my [mom.lua](https://github.com/tst2005/mom) project
  * my [lua-isolation](https://github.com/tst2005/lua-isolation)
 
+See the full list in the repository [lua-aio-scripts](https://github.com/tst2005/lua-aio-scripts).
 
 # How it run
 
