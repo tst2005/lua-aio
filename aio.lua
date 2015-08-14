@@ -67,12 +67,12 @@ local function extractshebang(data)
 end
 
 local function dropshebang(data)
-	local data, shebang = extractshebang(data)
-	return data
+	local data2, shebang = extractshebang(data)
+	return data2
 end
 
 local function get_shebang(data)
-	local data, shebang = extractshebang(data)
+	local data2, shebang = extractshebang(data)
 	return shebang or false
 end
 
@@ -127,7 +127,7 @@ local function rawpack_module(modname, modpath)
 --	local quote       = function(s) return s:gsub('([%]%[]===[%]%[])','\\%1') end
 --	local unquotecode = [[:gsub('\\([%]%[]===[%]%[])','%1')]]
 
-	local b = [[do local loadstring=loadstring;(function(name, rawcode)require"package".preload[name]=function(...)return assert(loadstring(rawcode))(...)end;end)("]] .. modname .. [[", (]].."[["
+	local b = [[do local loadstring=_G.loadstring or _G.load;(function(name, rawcode)require"package".preload[name]=function(...)return assert(loadstring(rawcode))(...)end;end)("]] .. modname .. [[", (]].."[["
 	local e = "]])".. unquotecode .. ")end"
 
 --	if deny_package_access then
@@ -188,7 +188,7 @@ end
 --local function rawpack2_finish()
 --	print_no_nl(
 --[[
---local loadstring=loadstring; local preload = require"package".preload
+--local loadstring=_G.loadstring or _G.load; local preload = require"package".preload
 --for name, rawcode in pairs(sources) do preload[name]=function(...)return loadstring(rawcode)(...)end end
 --end;
 --]]
@@ -200,7 +200,7 @@ local function rawpack2_finish()
 [[
 local add
 if not pcall(function() add = require"aioruntime".add end) then
-        local loadstring=loadstring; local preload = require"package".preload
+        local loadstring=_G.loadstring or _G.load; local preload = require"package".preload
         add = function(name, rawcode)
 		if not preload[name] then
 		        preload[name] = function(...) return loadstring(rawcode)(...) end
@@ -250,7 +250,7 @@ local function pack_module(modname, modpath)
 end
 
 local function datapack(data, tagsep)
-	local tagsep = tagsep and tagsep or ''
+	tagsep = tagsep or ''
 	local c = data:sub(1,1)
 	if c == "\n" or c == "\r" then
 		return "["..tagsep.."["..c..data.."]"..tagsep.."]"
