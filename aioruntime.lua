@@ -12,8 +12,8 @@ local _M = {
 				print( "overwrite "..name)
 			end
 			preload[name] = function(...) return assert(loadstring(rawcode))(...) end
-		else
-			print( ("module %q not overwritten"):format(name), "p", p, "pri", pri )
+--		else
+--			print( ("module %q not overwritten"):format(name), "p", p, "pri", pri )
 		end
 	end,
 }
