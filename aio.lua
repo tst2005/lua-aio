@@ -46,6 +46,7 @@ end
 
 local function head(dirfile, n)
 	assert(dirfile)
+	if n < 1 then return "" end
 	local fd = assert(io.open(dirfile, "r"))
 	local data = nil
 	for i = 1,n,1 do
@@ -127,7 +128,7 @@ local function rawpack_module(modname, modpath)
 --	local quote       = function(s) return s:gsub('([%]%[]===[%]%[])','\\%1') end
 --	local unquotecode = [[:gsub('\\([%]%[]===[%]%[])','%1')]]
 
-	local b = [[do local loadstring=_G.loadstring or _G.load;(function(name, rawcode)require"package".preload[name]=function(...)return assert(loadstring(rawcode))(...)end;end)("]] .. modname .. [[", (]].."[["
+	local b = [[do local loadstring=_G.loadstring or _G.load;(function(name, rawcode)require"package".preload[name]=function(...)return assert(loadstring(rawcode), "loadstring: "..name.." failed")(...)end;end)("]] .. modname .. [[", (]].."[["
 	local e = "]])".. unquotecode .. ")end"
 
 --	if deny_package_access then
@@ -171,6 +172,7 @@ local function rawpack2_module(modname, modpath)
 
 	if not rawpack2_init_done then
 		rawpack2_init_done = not rawpack2_init_done
+		if rawpack2_finish_done then rawpack2_finish_done = false end
 		rawpack2_init()
 	end
 	local b = [[assert(not sources["]] .. modname .. [["])]]..[[sources["]] .. modname .. [["]=(]].."[===["
@@ -203,7 +205,7 @@ if not pcall(function() add = require"aioruntime".add end) then
         local loadstring=_G.loadstring or _G.load; local preload = require"package".preload
         add = function(name, rawcode)
 		if not preload[name] then
-		        preload[name] = function(...) return loadstring(rawcode)(...) end
+		        preload[name] = function(...) return assert(loadstring(rawcode), "loadstring: "..name.." failed")(...) end
 		else
 			print("WARNING: overwrite "..name)
 		end

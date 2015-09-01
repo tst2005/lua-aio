@@ -1,6 +1,6 @@
 
 local priorities = {}
-local loadstring=loadstring; local preload = require"package".preload
+local loadstring=_G.loadstring or _G.load; local preload = require"package".preload
 
 local _M = {
 	add = function(name, rawcode, pri)
@@ -11,7 +11,7 @@ local _M = {
 			if preload[name] then
 				print( "overwrite "..name)
 			end
-			preload[name] = function(...) return assert(loadstring(rawcode))(...) end
+			preload[name] = function(...) return assert(loadstring(rawcode), "loadstring: "..name.." failed")(...) end
 --		else
 --			print( ("module %q not overwritten"):format(name), "p", p, "pri", pri )
 		end
