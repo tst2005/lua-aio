@@ -69,9 +69,9 @@ local function main(arg)
 			local file=arg[i]; shift()
 			cmd_code(file)
 		elseif a1 == "--codehead" then
-			local n=arg[i]; shift()
+			local n=tonumber(arg[i]); shift()
 			local file=arg[i]; shift()
-			cmd_codehead(n, file)
+			cmd_codehead(n or 0, file)
 		elseif a1 == "--mode" then
 			local newmode=arg[i]; shift()
 			cmd_mode(newmode)

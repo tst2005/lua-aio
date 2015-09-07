@@ -46,7 +46,7 @@ end
 
 local function head(dirfile, n)
 	assert(dirfile)
-	if n < 1 then return "" end
+	if not n or n < 1 then return "" end
 	local fd = assert(io.open(dirfile, "r"))
 	local data = nil
 	for i = 1,n,1 do
