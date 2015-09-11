@@ -10,8 +10,7 @@ _=[[
 	LUA_PATH="${LUA_PATH:+{$LUA_PATH};}"'./?.lua;./?/init.lua;./lib/?.lua;./lib/?/init.lua;;' \
 	exec "$LUA" "$0" "$@"
 	exit $?
-]]
-_=nil
+]] and nil
 --[[--------------------------------------------------------------------------
 	-- Dragoon Framework - A Framework for Lua/LOVE --
 	-- Copyright (c) 2014-2015 TsT worldmaster.fr <tst2005@gmail.com> --

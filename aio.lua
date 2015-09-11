@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env lua
 _=[[
         for name in luajit lua5.3 lua-5.3 lua5.2 lua-5.2 lua5.1 lua-5.1 lua; do
                 : ${LUA:="$(command -v "$name")"}
@@ -10,8 +10,7 @@ _=[[
         LUA_PATH='./?.lua;./?/init.lua;./lib/?.lua;./lib/?/init.lua;;'
         exec "$LUA" "$0" "$@"
         exit $?
-]]
-_=nil
+]] and nil
 --[[--------------------------------------------------------------------------
 	-- Dragoon Framework - A Framework for Lua/LOVE --
 	-- Copyright (c) 2014-2015 TsT worldmaster.fr <tst2005@gmail.com> --
@@ -49,7 +48,7 @@ local function head(dirfile, n)
 	if not n or n < 1 then return "" end
 	local fd = assert(io.open(dirfile, "r"))
 	local data = nil
-	for i = 1,n,1 do
+	for _i = 1,n,1 do
 		local line = fd:read('*l')
 		if not line then break end
 		data = ( (data and data .. "\n") or ("") ) .. line
@@ -59,21 +58,94 @@ local function head(dirfile, n)
 end
 
 
+
+local function headgrep(dirfile, patn)
+	assert(dirfile)
+	patn = patn or "^(.+\n_=%[%[\n.*\n%]%] and nil\n)"
+
+	local fd = assert(io.open(dirfile, "r"))
+
+	local function search_begin_in_line(line)
+		--if line == "_=[[" then -- usual simple case
+		--	return line, "\n", 0
+		--end
+		local a,b,c,d = line:match( "^(%s*_%s*=%s*%[)(=*)(%[)(.*)$" ) -- <space> '_' <space> '=[' <=> '[' <code>
+		if not a then
+			return nil, nil, nil
+		end
+		return a..b..c, d.."\n", #b
+	end
+	local function search_2_first_line(fd)
+		local count = 0
+		while true do -- search in the 2 first non-empty lines
+--print("cout=", count)
+			local line = fd:read("*l")
+			if not line then break end
+			if count > 2 then break end
+			if not (line == "" or line:find("^%s+$")) then -- ignore empty line
+				count = count +1
+				local b, code, size = search_begin_in_line(line)
+				if b then
+					return b, code, size
+--else print("no match search_begin_in_line in", line)
+				end
+--else print("empty line")
+			end
+		end
+--print("after while -> nil")
+		return nil
+	end
+	local function search_end(fd, code, size)
+		local data = code
+--print(data)
+		local patn = "^(.*%]"..("="):rep(size).."%][^\n]*\n)"
+		local match
+		while true do
+			match = data:match(patn)
+			if match then return match end
+			local line = fd:read("*l")
+			if not line then break end
+			data = data..line.."\n"
+		end
+		return match
+	end
+
+	local b, code, size = search_2_first_line(fd)
+--	print(">>", b, code, size)
+
+	local hdata
+	if b then
+		local match = search_end(fd, code, size)
+		if match then
+--			print("found ...", b, match)
+			hdata = b..match -- shellcode found
+		else print("no match search_end")
+		end
+		-- openshell code found, but not the end
+	else
+--		print("hdata empty")
+		hdata = "" -- no shellcode
+	end
+	fd:close()
+	return hdata -- result: string or nil(error)
+end
+
+
 local function extractshebang(data)
 	if data:sub(1,1) ~= "#" then
 		return data, nil
 	end
-	local b, e, shebang = data:find("^([^\n]+)\n")
+	local _b, e, shebang = data:find("^([^\n]+)\n")
 	return data:sub(e+1), shebang
 end
 
 local function dropshebang(data)
-	local data2, shebang = extractshebang(data)
+	local data2, _shebang = extractshebang(data)
 	return data2
 end
 
 local function get_shebang(data)
-	local data2, shebang = extractshebang(data)
+	local _data2, shebang = extractshebang(data)
 	return shebang or false
 end
 
@@ -86,24 +158,31 @@ assert( get_shebang("# !/bin/cool\n") == "# !/bin/cool" )
 
 
 do -- selftest
-	local data, shebang = extractshebang
+	do
+	local data, shebang = extractshebang(
 [[#!/bin/sh
 test
 ]]
+)
 	assert(shebang=="#!/bin/sh")
 	assert(data=="test\n")
+	end
 
-	local data, shebang = extractshebang
+	do
+	local data, shebang = extractshebang(
 [[blah blah
 test
 ]]
+)
 	assert(shebang==nil)
 	assert(data=="blah blah\ntest\n")
+	end
 
 end -- end of selftests
 
 local function print_no_nl(data)
 	output(data)
+	return data
 end
 
 -- this is a workaround needed when the last character of the module content is end of line and the last line is a comment.
@@ -163,8 +242,8 @@ local function rawpack2_module(modname, modpath)
 	assert(modpath)
 
 -- quoting solution 1 : prefix all '[', ']' with '\'
-	local quote       = function(s) return s:gsub('([%]%[])','\\%1') end
-	local unquotecode = [[:gsub('\\([%]%[])','%1')]]
+--	local quote       = function(s) return s:gsub('([%]%[])','\\%1') end
+--	local unquotecode = [[:gsub('\\([%]%[])','%1')]]
 
 -- quoting solution 2 : prefix the pattern of '[===[', ']===]' with '\' ; FIXME: for now it quote ]===] or [===] or ]===[ or [===[
 	local quote       = function(s) return s:gsub('([%]%[]===)([%]%[])','\\%1\\%2') end
@@ -337,6 +416,11 @@ end
 local function cmd_codehead(n, file)
 	print_no_nl( dropshebang( head(file, n).."\n" ) )
 end
+local function cmd_shellcode(file, patn)
+	print_no_nl( headgrep(file, patn) )
+	--print_no_nl( dropshebang( headgrep(file, patn).."\n" ) )
+end
+
 local function cmd_mode(newmode)
 	local modes = {lua=true, raw=true, raw2=true}
 	if modes[newmode] then
@@ -374,7 +458,7 @@ local function cmd_finish()
 end
 
 local _M = {}
-_M._VERSION = "lua-aio 0.4"
+_M._VERSION = "lua-aio 0.5"
 _M._LICENSE = "MIT"
 
 _M.shebang	= cmd_shebang
@@ -382,7 +466,8 @@ _M.luamod	= cmd_luamod
 _M.rawmod	= cmd_rawmod
 _M.mod		= cmd_mod
 _M.code		= cmd_code
-_M.codehead	= cmd_codehead
+_M.codehead	= cmd_codehead -- obsolete
+_M.shellcode	= cmd_shellcode
 _M.mode		= cmd_mode
 _M.vfile	= cmd_vfile
 _M.autoaliases	= cmd_autoaliases
@@ -391,5 +476,18 @@ _M.ichechinit	= cmd_icheckinit
 _M.require	= cmd_require
 _M.luacode	= cmd_luacode
 _M.finish	= cmd_finish
+
+local function wrap(f)
+	return function(...)
+		f(...)
+		return _M
+	end
+end
+	
+for k,v in pairs(_M) do
+	if type(v) == "function" then
+		_M[k] = wrap(v)
+	end
+end
 
 return _M
