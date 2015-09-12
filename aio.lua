@@ -483,7 +483,7 @@ local function wrap(f)
 		return _M
 	end
 end
-	
+
 for k,v in pairs(_M) do
 	if type(v) == "function" then
 		_M[k] = wrap(v)
