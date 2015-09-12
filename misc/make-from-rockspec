@@ -1,0 +1,57 @@
+build = {
+	type = "builtin",
+	aio = {
+		{ "sheebang" },
+		{ "shellcode", "path/to/mymod.lua" },
+		{ "mode", "raw2" },
+		{ "rockspec.mods", "build.modules" },
+		{ "code", "path/to/mymod.lua" },
+	}
+	aio = function(aio, modules) -- arguments: aio the result of require"aio", modules the rockspec build.modules table
+		local mainfile = false
+		for k,v in pairs(modules) do
+			-- search the _sheebang ?
+		end
+		aio.sheebang(mainfile)
+		aio.shcode(mainfile)
+		aio.mode("raw2")
+		for k,v in pairs(modules) do
+			-- if lua file
+			local file = v
+			aio.mod(k, file)
+		end
+		aio.finish()
+		aio.code(mainfile) -- should not include the shcode
+		aio.finish()
+	end,
+	modules = {
+		-- A simple module written in Lua
+		apricot = "src/apricot.lua",
+ 
+		-- Note the required Lua syntax when listing submodules as keys
+		["apricot.seeds"] = "src/apricot/seeds.lua",
+		["mymod"] = {
+			"path/to/mymod.lua",
+			_aio_mainfile = true,
+		},
+
+ 
+	       -- A simple module written in C
+	       banana = "src/banana.c",
+ 
+	       -- C modules can span multiple files.
+	       cherry = {"src/cherry.c", "src/cherry_pie.c"},
+ 
+	       -- C modules also support an extended syntax, supporting
+	       -- cross-platform specifications of C defines, libraries and
+	       -- paths for external dependencies.
+	       date = {
+	          sources = {"src/date.c", "src/cali_date.c", "src/arab_date.c"},
+	          defines = {"MAX_DATES_PER_MEAL=50"}
+	          libraries = {"date"},
+	          incdirs = {"$(LIBDATE_INCDIR)"},
+	          libdirs = {"$(LIBDATE_LIBDIR)"}
+		}
+	}
+ }
+
