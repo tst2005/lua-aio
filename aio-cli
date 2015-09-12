@@ -32,6 +32,7 @@ local cmd_rawmod = aio.rawmod
 local cmd_mod = aio.mod
 local cmd_code = aio.code
 local cmd_codehead = aio.codehead
+local cmd_shellcode = aio.shellcode
 local cmd_mode = aio.mode
 local cmd_vfile = aio.vfile
 local cmd_autoaliases = aio.autoaliases
@@ -71,6 +72,9 @@ local function main(arg)
 			local n=tonumber(arg[i]); shift()
 			local file=arg[i]; shift()
 			cmd_codehead(n or 0, file)
+		elseif a1 == "--shellcode" then
+			local file=arg[i]; shift()
+			cmd_shellcode(file)
 		elseif a1 == "--mode" then
 			local newmode=arg[i]; shift()
 			cmd_mode(newmode)
