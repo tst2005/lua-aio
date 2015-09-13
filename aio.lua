@@ -155,6 +155,8 @@ assert( get_shebang("#!/bin/cool\n#blah") == "#!/bin/cool" )
 assert( get_shebang("#!/bin/cool\n") == "#!/bin/cool" )
 --assert( get_shebang("#!/bin/cool") == "#!/bin/cool" )
 assert( get_shebang("# !/bin/cool\n") == "# !/bin/cool" )
+assert( get_shebang("# /bin/cool !\nxxx\n") == "# /bin/cool !" )
+
 
 
 do -- selftest
@@ -457,7 +459,93 @@ local function cmd_finish()
 	result = {}
 end
 
+------------------------------------------------------------------------------
+
+local rockspec = {}
+--local rock_loaded = false
+local rockfile
+
+local function rock_file(file)
+	local compat_env
+	pcall( function() compat_env = require "compat_env" end )
+	compat_env = compat_env or pcall( require, "mom" ) and require "compat_env"
+
+	local loadfile = assert(compat_env.loadfile)
+	local ok, err = loadfile(file, "t", rockspec)
+
+	--[[
+	local fd = io.open(file, "r")
+	local content = fd:read("*a")
+	fd:close()
+	local ok, err = load(content, file, "t", rockspec)
+	]]--
+
+	if not ok then
+		error(err, 2)
+	end
+	ok()
+
+	local build = rockspec.build
+	if not( type(build) == "table" and type(build.type) == "string") then
+		return nil, "invalid rockspec file "..file
+	end
+	rockfile = file
+end
+
+local function rock_mod(where)
+	local build = rockspec.build
+	if where ~= "build.modules" then
+		error("not implemented yet [1a]", 2)
+	end
+	local modules = build.modules
+
+	if build.type == "builtin" then
+		if type(modules) ~= "table" then
+			error("missing build.modules table in file "..rockfile ,2)
+		end
+
+		for modname,modfile in pairs(modules) do
+			if type(modname) == "string" or type(modfile) == "string" then
+				cmd_mod(modname, modfile)
+			end
+		end
+	elseif build.type == "none" then
+		-- .install.lua ?
+		error(rockfile..": build.type == none", 2)
+	elseif build.type == "make" then
+		error(rockfile..": use make, skipped", 2)
+	else
+		error(rockfile..": build.type == "..build.type, 2)
+	end
+end
+
+local function rock_code(where)
+	local build = rockspec.build
+	if where ~= "build.install.bin" and where ~= "build.install.lua" then
+		error("not implemented yet [2a]", 2)
+	end
+
+	assert(where == "build.install.bin")
+	local cnt = 0
+	for k,v in pairs(build and build.install and build.install.bin or {}) do
+		cnt=cnt+1
+	end
+	if cnt>1 then
+		error(where.." containts more than one entry in file "..rockfile, 2)
+	end
+
+	local _k, v = next(build.install.bin)
+--	if type(k) == "number" then
+--		-- k=1, v=str
+--	else
+--		-- k=str, v=str
+--	end
+	cmd_code(v)
+end
+
+
 local _M = {}
+_M._NAME = "lua-aio"
 _M._VERSION = "lua-aio 0.5"
 _M._LICENSE = "MIT"
 
@@ -477,6 +565,12 @@ _M.require	= cmd_require
 _M.luacode	= cmd_luacode
 _M.finish	= cmd_finish
 
+local rock = {
+	file = rock_file,
+	mod  = rock_mod,
+	code = rock_code,
+}
+
 local function wrap(f)
 	return function(...)
 		f(...)
@@ -489,5 +583,14 @@ for k,v in pairs(_M) do
 		_M[k] = wrap(v)
 	end
 end
+--[[
+for k,v in pairs(rock) do
+	if type(v) == "function" then
+		rock[k] = wrap(v)
+	end
+end
+]]--
+
+_M.rock = rock
 
 return _M
