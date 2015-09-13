@@ -546,7 +546,7 @@ end
 
 local _M = {}
 _M._NAME = "lua-aio"
-_M._VERSION = "lua-aio 0.5"
+_M._VERSION = "lua-aio 0.6"
 _M._LICENSE = "MIT"
 
 _M.shebang	= cmd_shebang
