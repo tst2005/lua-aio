@@ -25,7 +25,7 @@ _=[[
 local deny_package_access = false
 local module_with_integrity_check = false
 local modcount = 0
-local mode = "lua"
+local mode = "raw2"
 
 --local argv = arg and (#arg -1) or 0
 local io = require"io"
@@ -519,6 +519,24 @@ local function rock_mod(where)
 	end
 end
 
+local function rock_get_binfile()
+	local build = rockspec.build
+	local t_bin = build and build.install and build.install.bin
+
+	if not t_bin then return nil end
+
+	local cnt = 0
+	for k,v in pairs(t_bin) do
+		cnt=cnt+1
+	end
+	if cnt>1 then
+		return nil
+		--error(where.." containts more than one entry in file "..rockfile, 2)
+	end
+	local _k, v = next(t_bin)
+	return v
+end
+
 local function rock_code(where)
 	local build = rockspec.build
 	if where ~= "build.install.bin" and where ~= "build.install.lua" then
@@ -526,23 +544,24 @@ local function rock_code(where)
 	end
 
 	assert(where == "build.install.bin")
-	local cnt = 0
-	for k,v in pairs(build and build.install and build.install.bin or {}) do
-		cnt=cnt+1
-	end
-	if cnt>1 then
-		error(where.." containts more than one entry in file "..rockfile, 2)
-	end
-
-	local _k, v = next(build.install.bin)
---	if type(k) == "number" then
---		-- k=1, v=str
---	else
---		-- k=str, v=str
---	end
+	local v = rock_get_binfile()
 	cmd_code(v)
 end
 
+local function rock_auto(rockfile, modname)
+	rock_file(rockfile)
+	local file = rock_get_binfile() or
+		rockspec.build and rockspec.build.modules and (rockspec.build.modules[modname] or rockspec.build.modules[modname..".init"])
+	assert(file)
+	cmd_shebang(file)
+	cmd_shellcode(file)
+	rock_mod("build.modules")
+	cmd_finish()
+	cmd_autoaliases()
+	cmd_code(file)
+	--rock_code("build.install.bin")
+	cmd_finish()
+end
 
 local _M = {}
 _M._NAME = "lua-aio"
@@ -569,6 +588,7 @@ local rock = {
 	file = rock_file,
 	mod  = rock_mod,
 	code = rock_code,
+	auto = rock_auto,
 }
 
 local function wrap(f)
