@@ -504,9 +504,22 @@ local function rock_mod(where)
 			error("missing build.modules table in file "..rockfile ,2)
 		end
 
+		local Done = {}
+		for _,modname in ipairs(modules) do
+			if not Done[modname] then
+				local modfile = modules[modname]
+				Done[modname] = true
+				if type(modname) == "string" or type(modfile) == "string" then
+					cmd_mod(modname, modfile)
+				end
+			end
+		end
 		for modname,modfile in pairs(modules) do
-			if type(modname) == "string" or type(modfile) == "string" then
-				cmd_mod(modname, modfile)
+			if type(modname) == "string" and not Done[modname] then
+				Done[modname] = true
+				if type(modname) == "string" or type(modfile) == "string" then
+					cmd_mod(modname, modfile)
+				end
 			end
 		end
 	elseif build.type == "none" then
@@ -550,16 +563,25 @@ end
 
 local function rock_auto(rockfile, modname)
 	rock_file(rockfile)
-	local file = rock_get_binfile() or
-		rockspec.build and rockspec.build.modules and (rockspec.build.modules[modname] or rockspec.build.modules[modname..".init"])
-	assert(file)
-	cmd_shebang(file)
-	cmd_shellcode(file)
+	local file
+	if modname then
+		file = rock_get_binfile() or
+			rockspec.build and rockspec.build.modules and (
+				rockspec.build.modules[modname] or
+				rockspec.build.modules[modname..".init"]
+			)
+		assert(file)
+	end
+	if file then
+		cmd_shebang(file)
+		cmd_shellcode(file)
+	end
 	rock_mod("build.modules")
 	cmd_finish()
 	cmd_autoaliases()
-	cmd_code(file)
-	--rock_code("build.install.bin")
+	if file then
+		cmd_code(file)
+	end
 	cmd_finish()
 end
 
