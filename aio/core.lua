@@ -4,10 +4,6 @@
 	-- Copyright (c) 2014-2015 TsT worldmaster.fr <tst2005@gmail.com> --
 --]]--------------------------------------------------------------------------
 
--- $0 --mod <modname1 pathtofile1> [--mod <modname2> <pathtofile2>] [-- <file> [files...]]
--- $0 {--mod ...|--code ...} [-- files...]
--- $0 --autoaliases
-
 local deny_package_access = false
 local module_with_integrity_check = false
 local modcount = 0
