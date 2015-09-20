@@ -4,17 +4,6 @@
 	-- Copyright (c) 2014-2015 TsT worldmaster.fr <tst2005@gmail.com> --
 --]]--------------------------------------------------------------------------
 
-local function output(data)
-
-local function print_no_nl(data)
-
-
-
---[[--------------------------------------------------------------------------
-	-- Dragoon Framework - A Framework for Lua/LOVE --
-	-- Copyright (c) 2014-2015 TsT worldmaster.fr <tst2005@gmail.com> --
---]]--------------------------------------------------------------------------
-
 local core = require "aio.core"
 local print_no_nl = core.print_no_nl
 local autoeol, extractshebang, cat = core.autoeol, core.extractshebang, core.cat

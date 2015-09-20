@@ -53,7 +53,7 @@ _M.mode		= cmd_mode
 local function cmd_luamod(name, file)
 	mods.lua.pack_mod(name, file)
 end
-_M.luamod	= aio.luamod
+_M.luamod	= core.luamod
 
 local function cmd_rawmod(name, file)
         if mode == "raw2" then
@@ -62,7 +62,7 @@ local function cmd_rawmod(name, file)
                 mods.raw.pack_mod(name, file)
         end
 end
-_M.rawmod	= aio.rawmod
+_M.rawmod	= core.rawmod
 
 local function cmd_mod(name, file)
 	if mode == "lua" then
@@ -77,7 +77,7 @@ local function cmd_mod(name, file)
 end
 _M.mod		= cmd_mod
 
-local finish_print = aio.finish_print
+local finish_print = core.finish_print
 local function cmd_finish()
 	local finish = mods[mode]
 	if finish then
