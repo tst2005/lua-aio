@@ -16,29 +16,78 @@ _=[[
 	-- Copyright (c) 2014-2015 TsT worldmaster.fr <tst2005@gmail.com> --
 --]]--------------------------------------------------------------------------
 
+local mode = "raw2" -- the default mode
 
 local _M = {}
 _M._NAME = "lua-aio"
 _M._VERSION = "lua-aio 0.6"
 _M._LICENSE = "MIT"
 
-local aio = require("aio.core")
+local core = require("aio.core")
+_M.shebang	= core.shebang
+_M.code		= core.code
+_M.codehead	= core.codehead -- obsolete
+_M.shellcode	= core.shellcode
 
-_M.shebang	= aio.shebang
+_M.vfile	= core.vfile
+_M.autoaliases	= core.autoaliases
+_M.require	= core.require
+_M.luacode	= core.luacode
+
+local mods = {}
+mods.lua = require "aio.modlua"
+mods.raw = require "aio.modraw"
+mods.raw2 = require "aio.modraw2"
+
+
+local function cmd_mode(newmode)
+	local modes = {lua=true, raw=true, raw2=true}
+	if modes[newmode] then
+		mode = newmode
+	else
+		error("invalid mode", 2)
+	end
+end
+_M.mode		= cmd_mode
+
+--[[
+local function cmd_luamod(name, file)
+	mods.lua.pack_mod(name, file)
+end
 _M.luamod	= aio.luamod
+
+local function cmd_rawmod(name, file)
+        if mode == "raw2" then
+                mods.raw2.pack_mod(name, file)
+        else
+                mods.raw.pack_mod(name, file)
+        end
+end
 _M.rawmod	= aio.rawmod
-_M.mod		= aio.mod
-_M.code		= aio.code
-_M.codehead	= aio.codehead -- obsolete
-_M.shellcode	= aio.shellcode
-_M.mode		= aio.mode
-_M.vfile	= aio.vfile
-_M.autoaliases	= aio.autoaliases
-_M.icheck	= aio.icheck
-_M.ichechinit	= aio.icheckinit
-_M.require	= aio.require
-_M.luacode	= aio.luacode
-_M.finish	= aio.finish
+]]--
+
+local function cmd_mod(name, file)
+	if mode == "lua" then
+		mods.lua.pack_mod(name, file)
+	elseif mode == "raw" then
+		mods.raw.pack_mod(name, file)
+	elseif mode == "raw2" then
+		mods.raw2.pack_mod(name, file)
+	else
+		error("invalid mode "..name, 2)
+	end
+end
+_M.mod		= cmd_mod
+
+local finish_print = aio.finish_print
+local function cmd_finish()
+	if mods[mode].finish then
+		mods[mode].finish()
+	end
+        finish_print()
+end
+_M.finish	= cmd_finish
+
 
 local function wrap(f)
 	return function(...)
@@ -51,6 +100,12 @@ for k,v in pairs(_M) do
 	if type(v) == "function" then
 		_M[k] = wrap(v)
 	end
+end
+
+local integrity = require "aio.integrity"
+if integrity then
+	_M.icheck	= integrity.cmd_icheck
+	_M.ichechinit	= integrity.cmd_icheckinit
 end
 
 local rock = require "aio.rock"
