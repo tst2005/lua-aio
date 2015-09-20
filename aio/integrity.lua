@@ -47,7 +47,7 @@ end
 
 local _M = {}
 _M.cmd_icheck	= cmd_icheck
-_M.cmd_ichechinit	= cmd_icheckinit
+_M.cmd_icheckinit	= cmd_icheckinit
 _M.integrity_modcount_incr = integrity_modcount_incr
 _M.module_with_integrity_check_get = function() return module_with_integrity_check end
 

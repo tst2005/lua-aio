@@ -24,15 +24,15 @@ _M._VERSION = "lua-aio 0.6"
 _M._LICENSE = "MIT"
 
 local core = require("aio.core")
-_M.shebang	= core.shebang
-_M.code		= core.code
-_M.codehead	= core.codehead -- obsolete
-_M.shellcode	= core.shellcode
+_M.shebang	= assert(core.shebang)
+_M.code		= assert(core.code)
+_M.codehead	= assert(core.codehead) -- obsolete
+_M.shellcode	= assert(core.shellcode)
 
-_M.vfile	= core.vfile
-_M.autoaliases	= core.autoaliases
-_M.require	= core.require
-_M.luacode	= core.luacode
+_M.vfile	= assert(core.vfile)
+_M.autoaliases	= assert(core.autoaliases)
+_M.require	= assert(core.require)
+_M.luacode	= assert(core.luacode)
 
 local mods = {}
 mods.lua = require "aio.modlua"
@@ -53,7 +53,7 @@ _M.mode		= cmd_mode
 local function cmd_luamod(name, file)
 	mods.lua.pack_mod(name, file)
 end
-_M.luamod	= core.luamod
+_M.luamod	= cmd_luamod
 
 local function cmd_rawmod(name, file)
         if mode == "raw2" then
@@ -62,7 +62,7 @@ local function cmd_rawmod(name, file)
                 mods.raw.pack_mod(name, file)
         end
 end
-_M.rawmod	= core.rawmod
+_M.rawmod	= cmd_rawmod
 
 local function cmd_mod(name, file)
 	if mode == "lua" then
@@ -77,9 +77,9 @@ local function cmd_mod(name, file)
 end
 _M.mod		= cmd_mod
 
-local finish_print = core.finish_print
+local finish_print = assert(core.finish_print)
 local function cmd_finish()
-	local finish = mods[mode]
+	local finish = mods[mode].finish
 	if finish then
 		finish()
 	end
@@ -103,8 +103,8 @@ end
 
 local integrity = require "aio.integrity"
 if integrity then
-	_M.icheck	= integrity.cmd_icheck
-	_M.ichechinit	= integrity.cmd_icheckinit
+	_M.icheck	= assert(integrity.cmd_icheck)
+	_M.ichechinit	= assert(integrity.cmd_icheckinit)
 end
 
 local rock = require "aio.rock"
