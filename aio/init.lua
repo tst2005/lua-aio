@@ -18,93 +18,46 @@ _=[[
 
 local mode = "raw2" -- the default mode
 
-local _M = {}
-_M._NAME = "lua-aio"
-_M._VERSION = "lua-aio 0.6"
-_M._LICENSE = "MIT"
+local M = {}
+M._NAME = "lua-aio"
+M._VERSION = "lua-aio 0.6"
+M._LICENSE = "MIT"
 
 local core = require("aio.core")
-_M.shebang	= assert(core.shebang)
-_M.code		= assert(core.code)
-_M.codehead	= assert(core.codehead) -- obsolete
-_M.shellcode	= assert(core.shellcode)
+M.shebang	= assert(core.shebang)
+M.code		= assert(core.code)
+M.codehead	= assert(core.codehead) -- obsolete
+M.shellcode	= assert(core.shellcode)
 
-_M.vfile	= assert(core.vfile)
-_M.autoaliases	= assert(core.autoaliases)
-_M.require	= assert(core.require)
-_M.luacode	= assert(core.luacode)
+M.vfile	= assert(core.vfile)
+M.autoaliases	= assert(core.autoaliases)
+M.require	= assert(core.require)
+M.luacode	= assert(core.luacode)
 
-local mods = {}
-mods.lua = require "aio.modlua"
-mods.raw = require "aio.modraw"
-mods.raw2 = require "aio.modraw2"
-
-
-local function cmd_mode(newmode)
-	local modes = {lua=true, raw=true, raw2=true}
-	if modes[newmode] then
-		mode = newmode
-	else
-		error("invalid mode", 2)
-	end
-end
-_M.mode		= cmd_mode
-
-local function cmd_luamod(name, file)
-	mods.lua.pack_mod(name, file)
-end
-_M.luamod	= cmd_luamod
-
-local function cmd_rawmod(name, file)
-        if mode == "raw2" then
-                mods.raw2.pack_mod(name, file)
-        else
-                mods.raw.pack_mod(name, file)
-        end
-end
-_M.rawmod	= cmd_rawmod
-
-local function cmd_mod(name, file)
-	if mode == "lua" then
-		mods.lua.pack_mod(name, file)
-	elseif mode == "raw" then
-		mods.raw.pack_mod(name, file)
-	elseif mode == "raw2" then
-		mods.raw2.pack_mod(name, file)
-	else
-		error("invalid mode "..name, 2)
-	end
-end
-_M.mod		= cmd_mod
-
-local finish_print = assert(core.finish_print)
-local function cmd_finish()
-	local finish = mods[mode].finish
-	if finish then
-		finish()
-	end
-        finish_print()
-end
-_M.finish	= cmd_finish
-
+local mods = require "aio.mods"
+M.mode		= assert(mods.mode)
+M.luamod	= assert(mods.luamod)
+M.rawmod	= assert(mods.rawmod)
+M.mod		= assert(mods.mod)
+M.finish	= assert(mods.finish)
 
 local function wrap(f)
 	return function(...)
 		f(...)
-		return _M
+		return M
 	end
 end
 
-for k,v in pairs(_M) do
+for k,v in pairs(M) do
 	if type(v) == "function" then
-		_M[k] = wrap(v)
+		M[k] = wrap(v)
 	end
 end
 
 local integrity = require "aio.integrity"
 if integrity then
-	_M.icheck	= assert(integrity.cmd_icheck)
-	_M.ichechinit	= assert(integrity.cmd_icheckinit)
+	M.icheck	= assert(integrity.cmd_icheck)
+	M.ichechinit	= assert(integrity.cmd_icheckinit)
 end
 
 local rock = require "aio.rock"
@@ -117,6 +70,6 @@ for k,v in pairs(rock) do
 end
 ]]--
 
-_M.rock = rock
+M.rock = assert(rock)
 
-return _M
+return M

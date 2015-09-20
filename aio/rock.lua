@@ -8,9 +8,6 @@
 
 local aio = require "aio.core"
 cmd_shebang	= aio.shebang
-cmd_luamod	= aio.luamod
-cmd_rawmod	= aio.rawmod
-cmd_mod 	= aio.mod
 cmd_code	= aio.code
 cmd_codehead	= aio.codehead
 cmd_shellcode	= aio.shellcode
@@ -21,7 +18,12 @@ cmd_icheck	= aio.icheck
 cmd_icheckinit	= aio.ichechinit
 cmd_require	= aio.require
 cmd_luacode	= aio.luacode
-cmd_finish	= aio.finish
+
+local mods = require "aio.mods"
+cmd_luamod	= mods.luamod
+cmd_rawmod	= mods.rawmod
+cmd_mod 	= mods.mod
+cmd_finish	= mods.finish
 
 
 local rockspec = {} -- rockspecs file will be loaded into this isolated env
