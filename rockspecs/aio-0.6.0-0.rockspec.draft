@@ -1,0 +1,37 @@
+package = "penlight"
+version = "1.1.0-3"
+
+source = {
+  dir = "aio-0.6",
+  url = "https://github.com/tst2005/lua-aio",
+  tag = "v0.6"
+}
+
+description = {
+  summary = "Lua All-In-One Embeding utility library",
+  homepage = "https://github.com/tst2005/lua-aio",
+  license = "MIT/X11",
+  maintainer = "tst2005@gmail.com",
+  detailed = [[
+FILL ME
+]]
+}
+
+dependencies = {
+  "lua >= 5.1",
+-- "compat_env >= 1.0",
+}
+
+build = {
+  type = "builtin",
+  modules = {
+    ["aio"] = "aio/init.lua",
+    ["aio.core"] = "aio/core.lua",
+    ["aio.mods"] = "aio/mods.lua",
+    ["aio.modlua"] = "aio/modlua.lua",
+    ["aio.modraw"] = "aio/modraw.lua",
+    ["aio.modraw2"] = "aio/modraw2.lua",
+    ["aio.rock"] = "aio/rock.lua",
+    ["aio.integrity"] = "aio/integrity.lua",
+  },
+}
