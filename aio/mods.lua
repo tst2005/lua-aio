@@ -4,13 +4,14 @@
 	-- Copyright (c) 2014-2015 TsT worldmaster.fr <tst2005@gmail.com> --
 --]]--------------------------------------------------------------------------
 
+local mode = "raw2" -- the default mode
+
 local mods = {}
 mods.lua = require "aio.modlua"
 mods.raw = require "aio.modraw"
 mods.raw2 = require "aio.modraw2"
 
 local _M = {}
-
 local function cmd_mode(newmode)
 	local modes = {lua=true, raw=true, raw2=true}
 	if modes[newmode] then
@@ -19,7 +20,7 @@ local function cmd_mode(newmode)
 		error("invalid mode", 2)
 	end
 end
-_M.mode		= cmd_mode
+_M.mode		= assert(cmd_mode)
 
 local function cmd_luamod(name, file)
 	mods.lua.pack_mod(name, file)
@@ -52,7 +53,7 @@ _M.mod		= cmd_mod
 local core = require "aio.core"
 local finish_print = assert(core.finish_print)
 local function cmd_finish()
-	local finish = mods[mode].finish
+	local finish = mods[mode].pack_finish
 	if finish then
 		finish()
 	end

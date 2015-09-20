@@ -6,25 +6,23 @@
 
 ------------------------------------------------------------------------------
 
-local aio = require "aio.core"
-cmd_shebang	= aio.shebang
-cmd_code	= aio.code
-cmd_codehead	= aio.codehead
-cmd_shellcode	= aio.shellcode
-cmd_mode	= aio.mode
-cmd_vfile	= aio.vfile
-cmd_autoaliases	= aio.autoaliases
-cmd_icheck	= aio.icheck
-cmd_icheckinit	= aio.ichechinit
-cmd_require	= aio.require
-cmd_luacode	= aio.luacode
+local core = require "aio.core"
+local cmd_shebang	= assert(core.shebang)
+local cmd_code		= assert(core.code)
+local cmd_codehead	= assert(core.codehead)
+local cmd_shellcode	= assert(core.shellcode)
+local cmd_vfile		= assert(core.vfile)
+local cmd_autoaliases	= assert(core.autoaliases)
+local cmd_require	= assert(core.require)
+local cmd_luacode	= assert(core.luacode)
+
 
 local mods = require "aio.mods"
-cmd_luamod	= mods.luamod
-cmd_rawmod	= mods.rawmod
-cmd_mod 	= mods.mod
-cmd_finish	= mods.finish
-
+local cmd_mode		= assert(mods.mode)
+local cmd_luamod	= assert(mods.luamod)
+local cmd_rawmod	= assert(mods.rawmod)
+local cmd_mod 		= assert(mods.mod)
+local cmd_finish	= assert(mods.finish)
 
 local rockspec = {} -- rockspecs file will be loaded into this isolated env
 --local rock_loaded = false

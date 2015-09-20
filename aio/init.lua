@@ -16,8 +16,6 @@ _=[[
 	-- Copyright (c) 2014-2015 TsT worldmaster.fr <tst2005@gmail.com> --
 --]]--------------------------------------------------------------------------
 
-local mode = "raw2" -- the default mode
-
 local M = {}
 M._NAME = "lua-aio"
 M._VERSION = "lua-aio 0.6"
