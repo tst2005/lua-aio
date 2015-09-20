@@ -125,6 +125,7 @@ local function get_shebang(data)
 	return shebang or false
 end
 
+if false then -- selftest
 assert( get_shebang("abc") == false )
 assert( get_shebang("#!/bin/cool\n#blah\n") == "#!/bin/cool" )
 assert( get_shebang("#!/bin/cool\n#blah") == "#!/bin/cool" )
@@ -132,10 +133,10 @@ assert( get_shebang("#!/bin/cool\n") == "#!/bin/cool" )
 --assert( get_shebang("#!/bin/cool") == "#!/bin/cool" ) -- FIXME
 assert( get_shebang("# !/bin/cool\n") == "# !/bin/cool" )
 assert( get_shebang("# /bin/cool !\nxxx\n") == "# /bin/cool !" )
+end
 
 
-
-do -- selftest
+if false then -- selftest
 	do
 	local data, shebang = extractshebang(
 [[#!/bin/sh
@@ -155,7 +156,6 @@ test
 	assert(shebang==nil)
 	assert(data=="blah blah\ntest\n")
 	end
-
 end -- end of selftests
 
 -- this is a workaround needed when the last character of the module content is end of line and the last line is a comment.
