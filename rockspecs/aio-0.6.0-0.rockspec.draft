@@ -1,19 +1,19 @@
-package = "penlight"
-version = "1.1.0-3"
+package = "lua-aio"
+version = "0.6.0-0"
 
 source = {
   dir = "aio-0.6",
-  url = "https://github.com/tst2005/lua-aio",
+  url = "git://github.com/tst2005/lua-aio.git",
   tag = "v0.6"
 }
 
 description = {
-  summary = "Lua All-In-One Embeding utility library",
+  summary = "Lua All-In-One Embeding utility",
   homepage = "https://github.com/tst2005/lua-aio",
   license = "MIT/X11",
   maintainer = "tst2005@gmail.com",
   detailed = [[
-FILL ME
+Lua All-In-One Embeding utility
 ]]
 }
 

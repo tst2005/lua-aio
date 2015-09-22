@@ -10,7 +10,7 @@ export LUA_PATH="./?.lua;./?/init.lua;"\
 "../lua-?/lua/?.lua;../lua-?/lua/?/init.lua;"\
 "../lua-?/?.lua;thirdparty/git/tst2005/lua-?/?.lua;;"
 
-
+if false; then
 lua -e '
 local aio = require "aio.init"
 aio.mode("raw2")
@@ -28,14 +28,14 @@ aio.finish()
 aio.mod("compat_env",		"compat_env.lua")
 aio.finish()
 
-aio.code(				"aio/init.lua")
+aio.code(			"aio/init.lua")
 aio.finish()
 ' > aio-wdeps/aio.lua
+fi
 
 lua -e '
 local aio = require "aio.init"
 aio.mode("raw2")
-
 aio.rock.auto("rockspecs/aio-0.6.0-0.rockspec.draft", "aio")
 ' > aio.lua
 
