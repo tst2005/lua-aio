@@ -1,16 +1,5 @@
 #!/usr/bin/env lua
-_=[[
-        for name in luajit lua5.3 lua-5.3 lua5.2 lua-5.2 lua5.1 lua-5.1 lua; do
-                : ${LUA:="$(command -v "$name")"}
-        done
-        if [ -z "$LUA" ]; then
-                echo >&2 "ERROR: lua interpretor not found"
-                exit 1
-        fi
-        LUA_PATH='./?.lua;./?/init.lua;./lib/?.lua;./lib/?/init.lua;;'
-        exec "$LUA" "$0" "$@"
-        exit $?
-]] and nil
+
 --[[--------------------------------------------------------------------------
 	-- Dragoon Framework - A Framework for Lua/LOVE --
 	-- Copyright (c) 2014-2015 TsT worldmaster.fr <tst2005@gmail.com> --
@@ -18,7 +7,7 @@ _=[[
 
 local M = {}
 M._NAME = "lua-aio"
-M._VERSION = "lua-aio 0.6"
+M._VERSION = "lua-aio 0.6.2"
 M._LICENSE = "MIT"
 
 local core = require("aio.core")

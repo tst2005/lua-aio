@@ -34,7 +34,6 @@ aio.finish()
 ' > aio-wdeps/aio.lua
 fi
 
-#LUA_PATH="$LUA_PATH"
 luajit -e '
 local aio = require "aio.init"
 aio.mode("raw2")

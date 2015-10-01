@@ -55,7 +55,7 @@ local function rock_file(file)
 	rockfile = file
 end
 
-local function rock_mod(where)
+local function rock_mod(where, but)
 	local build = rockspec.build
 	if where ~= "build.modules" then
 		error("not implemented yet [1a]", 2)
@@ -68,19 +68,20 @@ local function rock_mod(where)
 		end
 
 		local Done = {}
+		-- try to support order with i-table items
 		for _,modname in ipairs(modules) do
-			if not Done[modname] then
+			if not Done[modname] and modname ~= but then
 				local modfile = modules[modname]
 				Done[modname] = true
-				if type(modname) == "string" or type(modfile) == "string" then
+				if type(modname) == "string" and type(modfile) == "string" then
 					cmd_mod(modname, modfile)
 				end
 			end
 		end
 		for modname,modfile in pairs(modules) do
-			if type(modname) == "string" and not Done[modname] then
+			if type(modname) == "string" and not Done[modname] and modname ~= but then
 				Done[modname] = true
-				if type(modname) == "string" or type(modfile) == "string" then
+				if type(modname) == "string" and type(modfile) == "string" then
 					cmd_mod(modname, modfile)
 				end
 			end
@@ -139,7 +140,7 @@ local function rock_auto(rockfile, modname)
 		cmd_shebang(file)
 		cmd_shellcode(file)
 	end
-	rock_mod("build.modules")
+	rock_mod("build.modules", modname)
 	cmd_finish()
 	cmd_autoaliases()
 	if file then
