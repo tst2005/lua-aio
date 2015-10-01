@@ -25,13 +25,13 @@ dependencies = {
 build = {
   type = "builtin",
   modules = {
-    ["aio"] = "aio/init.lua",
-    ["aio.core"] = "aio/core.lua",
-    ["aio.mods"] = "aio/mods.lua",
-    ["aio.modlua"] = "aio/modlua.lua",
-    ["aio.modraw"] = "aio/modraw.lua",
-    ["aio.modraw2"] = "aio/modraw2.lua",
-    ["aio.rock"] = "aio/rock.lua",
-    ["aio.integrity"] = "aio/integrity.lua",
+    ["aio"]           = "src//aio/init.lua",
+    ["aio.core"]      = "src/aio/core.lua",
+    ["aio.mods"]      = "src/aio/mods.lua",
+    ["aio.modlua"]    = "src/aio/modlua.lua",
+    ["aio.modraw"]    = "src/aio/modraw.lua",
+    ["aio.modraw2"]   = "src/aio/modraw2.lua",
+    ["aio.rock"]      = "src/aio/rock.lua",
+    ["aio.integrity"] = "src/aio/integrity.lua",
   },
 }
