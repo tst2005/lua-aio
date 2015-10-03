@@ -22,6 +22,7 @@ M.luacode	= assert(core.luacode)
 
 local mods = require "aio.mods"
 M.mode		= assert(mods.mode)
+M.inpreload	= assert(mods.inpreload)
 M.luamod	= assert(mods.luamod)
 M.rawmod	= assert(mods.rawmod)
 M.mod		= assert(mods.mod)

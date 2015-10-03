@@ -136,8 +136,23 @@ if not pcall(function() add = require"aioruntime".add end) then
         end
 end
 for name, rawcode in pairs(sources) do add(name, rawcode, priorities[name]) end
-sources={}
 end; --}};
+--- debug ---
+local fback = require "bootstrap.fallback"
+local fallback = require "fallback"
+local _require = fallback.require -- or directly fallback
+local _PACKAGE = fallback.package
+local preload = _PACKAGE.preload
+
+preload["fallback.compat_env"] = function()
+        return {_NAME="compat_env"}
+end
+
+preload["foo.bar"] = function()
+        return {_NAME="foo.bar"}
+end
+--- debug end ---
+
 do --{{
 local sources, priorities = {}, {};assert(not sources["aio.integrity"],"module already exists")sources["aio.integrity"]=([===[-- <pack aio.integrity> --
 
@@ -481,6 +496,7 @@ mods.raw = require "aio.modraw"
 mods.raw2 = require "aio.modraw2"
 
 local _M = {}
+
 local function cmd_mode(newmode)
 	if not config.validmodes[newmode] then
 		error("invalid mode "..newmode, 2)
@@ -488,6 +504,14 @@ local function cmd_mode(newmode)
 	config.mode = newmode
 end
 _M.mode		= assert(cmd_mode)
+
+local function cmd_inpreload(preload)
+	assert( type(preload)=="string", "argument #1 must be a lua code string")
+	config.preload = preload
+end
+_M.inpreload		= assert(cmd_inpreload)
+
+
 
 local function cmd_luamod(name, file)
 	mods.lua.pack_mod(name, file)
@@ -838,7 +862,6 @@ if not pcall(function() add = require"aioruntime".add end) then
         end
 end
 for name, rawcode in pairs(sources) do add(name, rawcode, priorities[name]) end
-sources={}
 end; --}};
 ]]
 )
@@ -931,7 +954,6 @@ if not pcall(function() add = require"aioruntime".add end) then
         end
 end
 for name, rawcode in pairs(sources) do add(name, rawcode, priorities[name]) end
-sources={}
 end; --}};
 do -- preload auto aliasing...
 	local p = require("package").preload
@@ -967,6 +989,7 @@ M.luacode	= assert(core.luacode)
 
 local mods = require "aio.mods"
 M.mode		= assert(mods.mode)
+M.inpreload	= assert(mods.inpreload)
 M.luamod	= assert(mods.luamod)
 M.rawmod	= assert(mods.rawmod)
 M.mod		= assert(mods.mod)

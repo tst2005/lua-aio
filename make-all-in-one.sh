@@ -41,8 +41,8 @@ aio.mode("raw2")
 local f = function()
 	aio.mod("bootstrap.fallback",	"fallback.lua")
 	aio.finish()
-end
---[[
+	aio.luacode[[
+--- debug ---
 local fback = require "bootstrap.fallback"
 local fallback = require "fallback"
 local _require = fallback.require -- or directly fallback
@@ -56,8 +56,10 @@ end
 preload["foo.bar"] = function()
         return {_NAME="foo.bar"}
 end
-
-]]--
+--- debug end ---
+]]
+	aio.finish()
+end
 aio.rock.auto("rockspecs/aio-0.6.2-0.rockspec.draft", "aio", f)
 ' > aio.lua
 

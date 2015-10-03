@@ -15,6 +15,7 @@ mods.raw = require "aio.modraw"
 mods.raw2 = require "aio.modraw2"
 
 local _M = {}
+
 local function cmd_mode(newmode)
 	if not config.validmodes[newmode] then
 		error("invalid mode "..newmode, 2)
@@ -22,6 +23,14 @@ local function cmd_mode(newmode)
 	config.mode = newmode
 end
 _M.mode		= assert(cmd_mode)
+
+local function cmd_inpreload(preload)
+	assert( type(preload)=="string", "argument #1 must be a lua code string")
+	config.preload = preload
+end
+_M.inpreload		= assert(cmd_inpreload)
+
+
 
 local function cmd_luamod(name, file)
 	mods.lua.pack_mod(name, file)

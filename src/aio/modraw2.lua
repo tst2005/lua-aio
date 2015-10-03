@@ -78,7 +78,6 @@ if not pcall(function() add = require"aioruntime".add end) then
         end
 end
 for name, rawcode in pairs(sources) do add(name, rawcode, priorities[name]) end
-sources={}
 end; --}};
 ]]
 )
