@@ -1,5 +1,145 @@
 #!/usr/bin/env lua
-do local sources, priorities = {}, {};assert(not sources["aio.integrity"])sources["aio.integrity"]=([===[-- <pack aio.integrity> --
+do --{{
+local sources, priorities = {}, {};assert(not sources["bootstrap.fallback"],"module already exists")sources["bootstrap.fallback"]=([===[-- <pack bootstrap.fallback> --
+
+-- ----------------------------------------------------------
+
+--local assert = assert
+local error, ipairs, type = error, ipairs, type
+local format = string.format
+--local loadfile = loadfile
+
+local function lassert(cond, msg, lvl)
+	if not cond then
+		error(msg, lvl+1)
+	end
+	return cond
+end
+local function checkmodname(s)
+	local t = type(s)
+	if t == "string" then
+	        return s
+	elseif t == "number" then
+		return tostring(s)
+	else
+		error("bad argument #1 to `require' (string expected, got "..t..")", 3)
+	end
+end
+--
+-- iterate over available searchers
+--
+local function iload(modname, searchers)
+	lassert(type(searchers) == "table", "`package.searchers' must be a table", 2)
+	local msg = ""
+	for _, searcher in ipairs(searchers) do
+		local loader, param = searcher(modname)
+		if type(loader) == "function" then
+			return loader, param -- success
+		end
+		if type(loader) == "string" then
+			-- `loader` is actually an error message
+			msg = msg .. loader
+		end
+	end
+	error("module `" .. modname .. "' not found: "..msg, 2)
+end
+
+local function bigfunction_new(with_loaded)
+
+	local _PACKAGE = {}
+	local _LOADED = with_loaded or {}
+	local _SEARCHERS  = {}
+
+	--
+	-- new require
+	--
+	local function _require(modname)
+
+		modname = checkmodname(modname)
+		local p = _LOADED[modname]
+		if p then -- is it there?
+			return p -- package is already loaded
+		end
+
+		local loader, param = iload(modname, _SEARCHERS)
+
+		local res = loader(modname, param)
+		if res ~= nil then
+			p = res
+		elseif not _LOADED[modname] then
+			p = true
+		else
+			p = _LOADED[name]
+		end
+
+		_LOADED[modname] = p
+		return p
+	end
+
+	_LOADED.package = _PACKAGE
+	do
+		local package = _PACKAGE
+		package.loaded		= _LOADED
+		package.searchers	= _SEARCHERS
+	end
+	return _require, _PACKAGE
+end -- big function
+
+local new = bigfunction_new
+
+local with_loaded = {}
+local _require, _PACKAGE = new(with_loaded)
+local searchers = _PACKAGE.searchers
+
+-- [keep] 0) already loaded package (in _PACKAGE.loaded)
+-- [keep] 1) local submodule will be stored in _PACKAGE.preload[?]
+-- [new ] 2) uplevel require() (follow uplevel's loaded/preload/...)
+-- [new ] 3) fallback -> search in preload table but with a suffix name "fallback."
+
+--
+-- check whether library is already loaded
+--
+local _PRELOAD = {}
+_PACKAGE.preload = _PRELOAD
+local function searcher_preload(name)
+	lassert(type(name) == "string", format("bad argument #1 to `require' (string expected, got %s)", type(name)), 2)
+	lassert(type(_PRELOAD) == "table", "`package.preload' must be a table", 2)
+	return _PRELOAD[name]
+end
+table.insert(searchers, searcher_preload)
+
+--
+local function search_uplevel(modname)
+	local ok, ret = pcall(require, modname)
+	if not ok then return false end
+	return function() return ret end
+end
+table.insert(searchers, search_uplevel)
+
+--
+local function search_fallback(modname)
+	return _PRELOAD["fallback." .. modname]
+end
+table.insert(searchers, search_fallback)
+
+return setmetatable({require = _require, package = _PACKAGE}, {__call = function(_self, ...) return _require(...) end})
+]===]):gsub('\\([%]%[]===)\\([%]%[])','%1%2')
+local add
+if not pcall(function() add = require"aioruntime".add end) then
+        local loadstring=_G.loadstring or _G.load; local preload = require"package".preload
+	add = function(name, rawcode)
+		if not preload[name] then
+		        preload[name] = function(...) return assert(loadstring(rawcode), "loadstring: "..name.." failed")(...) end
+		else
+			print("WARNING: overwrite "..name)
+		end
+        end
+end
+for name, rawcode in pairs(sources) do add(name, rawcode, priorities[name]) end
+sources={}
+end; --}};
+do --{{
+local sources, priorities = {}, {};assert(not sources["aio.integrity"],"module already exists")sources["aio.integrity"]=([===[-- <pack aio.integrity> --
 
 --[[--------------------------------------------------------------------------
 	-- Dragoon Framework - A Framework for Lua/LOVE --
@@ -56,72 +196,7 @@ _M.module_with_integrity_check_get = function() return module_with_integrity_che
 
 return _M
 ]===]):gsub('\\([%]%[]===)\\([%]%[])','%1%2')
-assert(not sources["aio.mods"])sources["aio.mods"]=([===[-- <pack aio.mods> --
---[[--------------------------------------------------------------------------
-	-- Dragoon Framework - A Framework for Lua/LOVE --
-	-- Copyright (c) 2014-2015 TsT worldmaster.fr <tst2005@gmail.com> --
---]]--------------------------------------------------------------------------
-
-local mode = "raw2" -- the default mode
-
-local mods = {}
-mods.lua = require "aio.modlua"
-mods.raw = require "aio.modraw"
-mods.raw2 = require "aio.modraw2"
-
-local _M = {}
-local function cmd_mode(newmode)
-	local modes = {lua=true, raw=true, raw2=true}
-	if modes[newmode] then
-		mode = newmode
-	else
-		error("invalid mode", 2)
-	end
-end
-_M.mode		= assert(cmd_mode)
-
-local function cmd_luamod(name, file)
-	mods.lua.pack_mod(name, file)
-end
-_M.luamod	= cmd_luamod
-
-local function cmd_rawmod(name, file)
-        if mode == "raw2" then
-                mods.raw2.pack_mod(name, file)
-        else
-                mods.raw.pack_mod(name, file)
-        end
-end
-_M.rawmod	= cmd_rawmod
-
-local function cmd_mod(name, file)
-	if mode == "lua" then
-		mods.lua.pack_mod(name, file)
-	elseif mode == "raw" then
-		mods.raw.pack_mod(name, file)
-	elseif mode == "raw2" then
-		mods.raw2.pack_mod(name, file)
-	else
-		error("invalid mode "..name, 2)
-	end
-end
-_M.mod		= cmd_mod
-
-
-local core = require "aio.core"
-local finish_print = assert(core.finish_print)
-local function cmd_finish()
-	local finish = mods[mode].pack_finish
-	if finish then
-		finish()
-	end
-        finish_print()
-end
-_M.finish	= cmd_finish
-
-return _M
-]===]):gsub('\\([%]%[]===)\\([%]%[])','%1%2')
-assert(not sources["aio.core"])sources["aio.core"]=([===[-- <pack aio.core> --
+assert(not sources["aio.core"],"module already exists")sources["aio.core"]=([===[-- <pack aio.core> --
 
 --[[--------------------------------------------------------------------------
 	-- Dragoon Framework - A Framework for Lua/LOVE --
@@ -388,7 +463,75 @@ _M.print_no_nl = print_no_nl
 
 return _M
 ]===]):gsub('\\([%]%[]===)\\([%]%[])','%1%2')
-assert(not sources["aio.rock"])sources["aio.rock"]=([===[-- <pack aio.rock> --
+assert(not sources["aio.mods"],"module already exists")sources["aio.mods"]=([===[-- <pack aio.mods> --
+
+--[[--------------------------------------------------------------------------
+	-- Dragoon Framework - A Framework for Lua/LOVE --
+	-- Copyright (c) 2014-2015 TsT worldmaster.fr <tst2005@gmail.com> --
+--]]--------------------------------------------------------------------------
+
+local config = require "aio.config"
+
+config.mode = config.mode or "raw2" -- the default mode
+config.validmodes = {lua=true, raw=true, raw2=true}
+
+local mods = {}
+mods.lua = require "aio.modlua"
+mods.raw = require "aio.modraw"
+mods.raw2 = require "aio.modraw2"
+
+local _M = {}
+local function cmd_mode(newmode)
+	if not config.validmodes[newmode] then
+		error("invalid mode "..newmode, 2)
+	end
+	config.mode = newmode
+end
+_M.mode		= assert(cmd_mode)
+
+local function cmd_luamod(name, file)
+	mods.lua.pack_mod(name, file)
+end
+_M.luamod	= cmd_luamod
+
+local function cmd_rawmod(name, file)
+        if config.mode == "raw2" then
+                mods.raw2.pack_mod(name, file)
+        else
+                mods.raw.pack_mod(name, file)
+        end
+end
+_M.rawmod	= cmd_rawmod
+
+local function cmd_mod(name, file)
+	local mode = config.mode
+	if mode == "lua" then
+		mods.lua.pack_mod(name, file)
+	elseif mode == "raw" then
+		mods.raw.pack_mod(name, file)
+	elseif mode == "raw2" then
+		mods.raw2.pack_mod(name, file)
+	else
+		error("invalid mode "..mode, 2)
+	end
+end
+_M.mod		= cmd_mod
+
+
+local core = require "aio.core"
+local finish_print = assert(core.finish_print)
+local function cmd_finish()
+	local finish = mods[config.mode].pack_finish
+	if finish then
+		finish()
+	end
+        finish_print()
+end
+_M.finish	= cmd_finish
+
+return _M
+]===]):gsub('\\([%]%[]===)\\([%]%[])','%1%2')
+assert(not sources["aio.rock"],"module already exists")sources["aio.rock"]=([===[-- <pack aio.rock> --
 
 --[[--------------------------------------------------------------------------
 	-- Dragoon Framework - A Framework for Lua/LOVE --
@@ -516,7 +659,7 @@ local function rock_code(where)
 	cmd_code(v)
 end
 
-local function rock_auto(rockfile, modname)
+local function rock_auto(rockfile, modname, custom)
 	rock_file(rockfile)
 	local file
 	if modname then
@@ -530,6 +673,9 @@ local function rock_auto(rockfile, modname)
 	if file then
 		cmd_shebang(file)
 		cmd_shellcode(file)
+	end
+	if type(custom) == "function" then
+		custom()
 	end
 	rock_mod("build.modules", modname)
 	cmd_finish()
@@ -549,7 +695,7 @@ local rock = {
 
 return rock
 ]===]):gsub('\\([%]%[]===)\\([%]%[])','%1%2')
-assert(not sources["aio.modraw"])sources["aio.modraw"]=([===[-- <pack aio.modraw> --
+assert(not sources["aio.modraw"],"module already exists")sources["aio.modraw"]=([===[-- <pack aio.modraw> --
 
 --[[--------------------------------------------------------------------------
 	-- Dragoon Framework - A Framework for Lua/LOVE --
@@ -611,7 +757,111 @@ M.pack_finish	= nil
 
 return M
 ]===]):gsub('\\([%]%[]===)\\([%]%[])','%1%2')
-assert(not sources["aio.modlua"])sources["aio.modlua"]=([===[-- <pack aio.modlua> --
+assert(not sources["aio.modraw2"],"module already exists")sources["aio.modraw2"]=([===[-- <pack aio.modraw2> --
+
+--[[--------------------------------------------------------------------------
+	-- Dragoon Framework - A Framework for Lua/LOVE --
+	-- Copyright (c) 2014-2015 TsT worldmaster.fr <tst2005@gmail.com> --
+--]]--------------------------------------------------------------------------
+
+local core = require "aio.core"
+local config = require "aio.config"
+
+local print_no_nl = assert(core.print_no_nl)
+local autoeol, extractshebang, cat = core.autoeol, core.extractshebang, core.cat
+assert( autoeol and extractshebang and cat )
+
+local integrity = require "aio.integrity"
+local module_with_integrity_check_get = integrity.module_with_integrity_check_get
+local integrity_modcount_incr = integrity.integrity_modcount_incr
+assert( module_with_integrity_check_get and integrity_modcount_incr)
+
+local rawpack2_init_done = false
+local rawpack2_finish_done = false
+
+local function rawpack2_init()
+	print_no_nl([[do --{{
+local sources, priorities = {}, {};]])
+end
+
+local function rawpack2_module(modname, modpath)
+	assert(modname)
+	assert(modpath)
+
+-- quoting solution 1 : prefix all '[', ']' with '\'
+--	local quote       = function(s) return s:gsub('([%]%[])','\\%1') end
+--	local unquotecode = [[:gsub('\\([%]%[])','%1')]]
+
+-- quoting solution 2 : prefix the pattern of '\[===\[', '\]===\]' with '\' ; FIXME: for now it quote \]===\] or \[===\] or \]===\[ or \[===\[
+	local quote       = function(s) return s:gsub('([%]%[]===)([%]%[])','\\%1\\%2') end
+	local unquotecode = [[:gsub('\\([%]%[]===)\\([%]%[])','%1%2')]]
+
+	if not rawpack2_init_done then
+		rawpack2_init_done = not rawpack2_init_done
+		if rawpack2_finish_done then rawpack2_finish_done = false end
+		rawpack2_init()
+	end
+	local b = [[assert(not sources["]] .. modname .. [["],"module already exists")]]..[[sources["]] .. modname .. [["]=(]].."\[===\["
+	local e = "\]===\])".. unquotecode
+
+	local d = "-- <pack "..modname.."> --" -- error message keep the first 45 chars max
+	print_no_nl(
+		b .. d .."\n"
+		.. quote(autoeol(extractshebang(cat(modpath))))
+		.. e .."\n"
+	)
+	--integrity_modcount_incr() -- for integrity check
+end
+
+--local function rawpack2_finish()
+--	print_no_nl(
+--[[
+--local loadstring=_G.loadstring or _G.load; local preload = require"package".preload
+--for name, rawcode in pairs(sources) do preload[name]=function(...)return loadstring(rawcode)(...)end end
+--end;
+--]]
+--)
+--end
+
+local function rawpack2_finish()
+	print_no_nl(
+[[
+local add
+if not pcall(function() add = require"aioruntime".add end) then
+        local loadstring=_G.loadstring or _G.load; local preload = ]] ..( config.preload or [[require"package".preload]] ).. "\n"..
+[[	add = function(name, rawcode)
+		if not preload[name] then
+		        preload[name] = function(...) return assert(loadstring(rawcode), "loadstring: "..name.." failed")(...) end
+		else
+			print("WARNING: overwrite "..name)
+		end
+        end
+end
+for name, rawcode in pairs(sources) do add(name, rawcode, priorities[name]) end
+sources={}
+end; --}};
+]]
+)
+end
+
+local function finish()
+	if rawpack2_init_done and not rawpack2_finish_done then
+		rawpack2_finish_done = not rawpack2_finish_done
+		rawpack2_finish()
+		rawpack2_init_done = false
+	end
+end
+
+------------------------------------------------------------------------------
+
+local M = {}
+
+M.pack_mod	= assert(rawpack2_module)
+M.pack_finish	= assert(finish)
+
+return M
+]===]):gsub('\\([%]%[]===)\\([%]%[])','%1%2')
+assert(not sources["aio.modlua"],"module already exists")sources["aio.modlua"]=([===[-- <pack aio.modlua> --
 
 --[[--------------------------------------------------------------------------
 	-- Dragoon Framework - A Framework for Lua/LOVE --
@@ -666,109 +916,13 @@ local _M = {}
 _M.pack_mod = cmd_luamod
 return _M
 ]===]):gsub('\\([%]%[]===)\\([%]%[])','%1%2')
-assert(not sources["aio.modraw2"])sources["aio.modraw2"]=([===[-- <pack aio.modraw2> --
-
---[[--------------------------------------------------------------------------
-	-- Dragoon Framework - A Framework for Lua/LOVE --
-	-- Copyright (c) 2014-2015 TsT worldmaster.fr <tst2005@gmail.com> --
---]]--------------------------------------------------------------------------
-
-local core = require "aio.core"
-local print_no_nl = assert(core.print_no_nl)
-local autoeol, extractshebang, cat = core.autoeol, core.extractshebang, core.cat
-assert( autoeol and extractshebang and cat )
-
-local integrity = require "aio.integrity"
-local module_with_integrity_check_get = integrity.module_with_integrity_check_get
-local integrity_modcount_incr = integrity.integrity_modcount_incr
-assert( module_with_integrity_check_get and integrity_modcount_incr)
-
-local rawpack2_init_done = false
-local rawpack2_finish_done = false
-
-local function rawpack2_init()
-	print_no_nl([[do local sources, priorities = {}, {};]])
-end
-
-local function rawpack2_module(modname, modpath)
-	assert(modname)
-	assert(modpath)
-
--- quoting solution 1 : prefix all '[', ']' with '\'
---	local quote       = function(s) return s:gsub('([%]%[])','\\%1') end
---	local unquotecode = [[:gsub('\\([%]%[])','%1')]]
-
--- quoting solution 2 : prefix the pattern of '\[===\[', '\]===\]' with '\' ; FIXME: for now it quote \]===\] or \[===\] or \]===\[ or \[===\[
-	local quote       = function(s) return s:gsub('([%]%[]===)([%]%[])','\\%1\\%2') end
-	local unquotecode = [[:gsub('\\([%]%[]===)\\([%]%[])','%1%2')]]
-
-	if not rawpack2_init_done then
-		rawpack2_init_done = not rawpack2_init_done
-		if rawpack2_finish_done then rawpack2_finish_done = false end
-		rawpack2_init()
-	end
-	local b = [[assert(not sources["]] .. modname .. [["])]]..[[sources["]] .. modname .. [["]=(]].."\[===\["
-	local e = "\]===\])".. unquotecode
-
-	local d = "-- <pack "..modname.."> --" -- error message keep the first 45 chars max
-	print_no_nl(
-		b .. d .."\n"
-		.. quote(autoeol(extractshebang(cat(modpath))))
-		.. e .."\n"
-	)
-	--integrity_modcount_incr() -- for integrity check
-end
-
---local function rawpack2_finish()
---	print_no_nl(
---[[
---local loadstring=_G.loadstring or _G.load; local preload = require"package".preload
---for name, rawcode in pairs(sources) do preload[name]=function(...)return loadstring(rawcode)(...)end end
---end;
---]]
---)
---end
-
-local function rawpack2_finish()
-	print_no_nl(
-[[
-local add
-if not pcall(function() add = require"aioruntime".add end) then
-        local loadstring=_G.loadstring or _G.load; local preload = require"package".preload
-        add = function(name, rawcode)
-		if not preload[name] then
-		        preload[name] = function(...) return assert(loadstring(rawcode), "loadstring: "..name.." failed")(...) end
-		else
-			print("WARNING: overwrite "..name)
-		end
-        end
-end
-for name, rawcode in pairs(sources) do add(name, rawcode, priorities[name]) end
-end;
-]]
-)
-end
-
-local function finish()
-	if rawpack2_init_done and not rawpack2_finish_done then
-		rawpack2_finish_done = not rawpack2_finish_done
-		rawpack2_finish()
-	end
-end
-
-------------------------------------------------------------------------------
-
-local M = {}
-
-M.pack_mod	= assert(rawpack2_module)
-M.pack_finish	= assert(finish)
-
-return M
+assert(not sources["aio.config"],"module already exists")sources["aio.config"]=([===[-- <pack aio.config> --
+return {}
 ]===]):gsub('\\([%]%[]===)\\([%]%[])','%1%2')
 local add
 if not pcall(function() add = require"aioruntime".add end) then
         local loadstring=_G.loadstring or _G.load; local preload = require"package".preload
-        add = function(name, rawcode)
+	add = function(name, rawcode)
 		if not preload[name] then
 		        preload[name] = function(...) return assert(loadstring(rawcode), "loadstring: "..name.." failed")(...) end
 		else
@@ -777,7 +931,8 @@ if not pcall(function() add = require"aioruntime".add end) then
         end
 end
 for name, rawcode in pairs(sources) do add(name, rawcode, priorities[name]) end
-end;
+sources={}
+end; --}};
 do -- preload auto aliasing...
 	local p = require("package").preload
 	for k,v in pairs(p) do
@@ -789,7 +944,6 @@ do -- preload auto aliasing...
 		end
 	end
 end
-
 --[[--------------------------------------------------------------------------
 	-- Dragoon Framework - A Framework for Lua/LOVE --
 	-- Copyright (c) 2014-2015 TsT worldmaster.fr <tst2005@gmail.com> --

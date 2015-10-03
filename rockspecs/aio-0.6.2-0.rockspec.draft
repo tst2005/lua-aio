@@ -26,6 +26,7 @@ build = {
   type = "builtin",
   modules = {
     ["aio"]           = "src/aio/init.lua",
+    ["aio.config"]    = "src/aio/config.lua",
     ["aio.core"]      = "src/aio/core.lua",
     ["aio.mods"]      = "src/aio/mods.lua",
     ["aio.modlua"]    = "src/aio/modlua.lua",

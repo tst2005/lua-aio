@@ -17,19 +17,20 @@ local aio = require "aio.init"
 aio.mode("raw2")
 
 --aio.rock.auto("rockspecs/aio-0.6.0-0.rockspec.draft", "aio")
-aio.mod("aio.core",             "lib/aio/core.lua")
-aio.mod("aio.mods",		"lib/aio/modlua.lua")
-aio.mod("aio.modlua", 		"lib/aio/modlua.lua")
-aio.mod("aio.modraw", 		"lib/aio/modraw.lua")
-aio.mod("aio.modraw2", 		"lib/aio/modraw2.lua")
-aio.mod("aio.rock",		"lib/aio/rock.lua")
-aio.mod("aio.integrity",	"lib/aio/integrity.lua")
+aio.mod("aio.config",		"src/aio/config.lua")
+aio.mod("aio.core",             "src/aio/core.lua")
+aio.mod("aio.mods",		"src/aio/modlua.lua")
+aio.mod("aio.modlua", 		"src/aio/modlua.lua")
+aio.mod("aio.modraw", 		"src/aio/modraw.lua")
+aio.mod("aio.modraw2", 		"src/aio/modraw2.lua")
+aio.mod("aio.rock",		"src/aio/rock.lua")
+aio.mod("aio.integrity",	"src/aio/integrity.lua")
 aio.finish()
 
 aio.mod("compat_env",		"compat_env.lua")
 aio.finish()
 
-aio.code(			"lib/aio/init.lua")
+aio.code(			"src/aio/init.lua")
 aio.finish()
 ' > aio-wdeps/aio.lua
 fi
@@ -37,6 +38,26 @@ fi
 luajit -e '
 local aio = require "aio.init"
 aio.mode("raw2")
-aio.rock.auto("rockspecs/aio-0.6.0-0.rockspec.draft", "aio")
+local f = function()
+	aio.mod("bootstrap.fallback",	"fallback.lua")
+	aio.finish()
+end
+--[[
+local fback = require "bootstrap.fallback"
+local fallback = require "fallback"
+local _require = fallback.require -- or directly fallback
+local _PACKAGE = fallback.package
+local preload = _PACKAGE.preload
+
+preload["fallback.compat_env"] = function()
+        return {_NAME="compat_env"}
+end
+
+preload["foo.bar"] = function()
+        return {_NAME="foo.bar"}
+end
+
+]]--
+aio.rock.auto("rockspecs/aio-0.6.2-0.rockspec.draft", "aio", f)
 ' > aio.lua
 

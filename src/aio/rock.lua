@@ -125,7 +125,7 @@ local function rock_code(where)
 	cmd_code(v)
 end
 
-local function rock_auto(rockfile, modname)
+local function rock_auto(rockfile, modname, custom)
 	rock_file(rockfile)
 	local file
 	if modname then
@@ -139,6 +139,9 @@ local function rock_auto(rockfile, modname)
 	if file then
 		cmd_shebang(file)
 		cmd_shellcode(file)
+	end
+	if type(custom) == "function" then
+		custom()
 	end
 	rock_mod("build.modules", modname)
 	cmd_finish()

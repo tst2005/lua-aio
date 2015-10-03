@@ -5,6 +5,8 @@
 --]]--------------------------------------------------------------------------
 
 local core = require "aio.core"
+local config = require "aio.config"
+
 local print_no_nl = assert(core.print_no_nl)
 local autoeol, extractshebang, cat = core.autoeol, core.extractshebang, core.cat
 assert( autoeol and extractshebang and cat )
@@ -18,7 +20,8 @@ local rawpack2_init_done = false
 local rawpack2_finish_done = false
 
 local function rawpack2_init()
-	print_no_nl([[do local sources, priorities = {}, {};]])
+	print_no_nl([[do --{{
+local sources, priorities = {}, {};]])
 end
 
 local function rawpack2_module(modname, modpath)
@@ -38,7 +41,7 @@ local function rawpack2_module(modname, modpath)
 		if rawpack2_finish_done then rawpack2_finish_done = false end
 		rawpack2_init()
 	end
-	local b = [[assert(not sources["]] .. modname .. [["])]]..[[sources["]] .. modname .. [["]=(]].."[===["
+	local b = [[assert(not sources["]] .. modname .. [["],"module already exists")]]..[[sources["]] .. modname .. [["]=(]].."[===["
 	local e = "]===])".. unquotecode
 
 	local d = "-- <pack "..modname.."> --" -- error message keep the first 45 chars max
@@ -65,8 +68,8 @@ local function rawpack2_finish()
 [[
 local add
 if not pcall(function() add = require"aioruntime".add end) then
-        local loadstring=_G.loadstring or _G.load; local preload = require"package".preload
-        add = function(name, rawcode)
+        local loadstring=_G.loadstring or _G.load; local preload = ]] ..( config.preload or [[require"package".preload]] ).. "\n"..
+[[	add = function(name, rawcode)
 		if not preload[name] then
 		        preload[name] = function(...) return assert(loadstring(rawcode), "loadstring: "..name.." failed")(...) end
 		else
@@ -75,7 +78,8 @@ if not pcall(function() add = require"aioruntime".add end) then
         end
 end
 for name, rawcode in pairs(sources) do add(name, rawcode, priorities[name]) end
-end;
+sources={}
+end; --}};
 ]]
 )
 end
@@ -84,6 +88,7 @@ local function finish()
 	if rawpack2_init_done and not rawpack2_finish_done then
 		rawpack2_finish_done = not rawpack2_finish_done
 		rawpack2_finish()
+		rawpack2_init_done = false
 	end
 end
 
