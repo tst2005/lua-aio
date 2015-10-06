@@ -43,8 +43,8 @@ local f = function()
 	aio.finish()
 	aio.luacode[[
 --- debug ---
-local fback = require "bootstrap.fallback"
-local fallback = require "fallback"
+local fallback = require "bootstrap.fallback"
+--local fallback = fback.require "fallback"
 local _require = fallback.require -- or directly fallback
 local _PACKAGE = fallback.package
 local preload = _PACKAGE.preload
