@@ -25,7 +25,7 @@ end
 _M.mode		= assert(cmd_mode)
 
 local function cmd_inpreload(preload)
-	assert( type(preload)=="string", "argument #1 must be a lua code string")
+	assert( preload==nil or type(preload)=="string", "argument #1 must be a lua code string")
 	config.preload = preload
 end
 _M.inpreload		= assert(cmd_inpreload)

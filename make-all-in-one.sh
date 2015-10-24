@@ -37,29 +37,34 @@ fi
 
 luajit -e '
 local aio = require "aio.init"
+--aio.use("aioruntime", false) -- NOT IMPLEMENTED YET
 aio.mode("raw2")
+
 local f = function()
 	aio.mod("bootstrap.fallback",	"fallback.lua")
+	--aio.mod("bootstrap.compat_env",	"compat_env.lua")
 	aio.finish()
+
 	aio.luacode[[
---- debug ---
 local fallback = require "bootstrap.fallback"
---local fallback = fback.require "fallback"
 local _require = fallback.require -- or directly fallback
-local _PACKAGE = fallback.package
-local preload = _PACKAGE.preload
-
-preload["fallback.compat_env"] = function()
-        return {_NAME="compat_env"}
-end
-
-preload["foo.bar"] = function()
-        return {_NAME="foo.bar"}
-end
---- debug end ---
+local _preload = fallback.package.preload
 ]]
 	aio.finish()
+	aio.inpreload("_preload")
+	aio.rock.file("rockspecs/aio-0.6.2-0.rockspec.draft")
+	aio.rock.mod("build.modules")
+	aio.finish()
 end
-aio.rock.auto("rockspecs/aio-0.6.2-0.rockspec.draft", "aio", f)
+
+--aio.rock.auto("rockspecs/aio-0.6.2-0.rockspec.draft", "aio")
+f()
+
+aio.inpreload(nil) -- restore default
+aio.finish()
+
+aio.code("src/aio/shadowinit.lua")
+aio.finish()
+
 ' > aio.lua
 

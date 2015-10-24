@@ -1,4 +1,3 @@
-#!/usr/bin/env lua
 do --{{
 local sources, priorities = {}, {};assert(not sources["bootstrap.fallback"],"module already exists")sources["bootstrap.fallback"]=([===[-- <pack bootstrap.fallback> --
 
@@ -124,34 +123,19 @@ table.insert(searchers, search_fallback)
 
 return setmetatable({require = _require, package = _PACKAGE}, {__call = function(_self, ...) return _require(...) end})
 ]===]):gsub('\\([%]%[]===)\\([%]%[])','%1%2')
-local add
-if not pcall(function() add = require"aioruntime".add end) then
-        local loadstring=_G.loadstring or _G.load; local preload = require"package".preload
-	add = function(name, rawcode)
-		if not preload[name] then
-		        preload[name] = function(...) return assert(loadstring(rawcode), "loadstring: "..name.." failed")(...) end
-		else
-			print("WARNING: overwrite "..name)
-		end
-        end
+local loadstring=_G.loadstring or _G.load; local preload = require"package".preload
+local add = function(name, rawcode)
+	if not preload[name] then
+	        preload[name] = function(...) return assert(loadstring(rawcode), "loadstring: "..name.." failed")(...) end
+	else
+		print("WARNING: overwrite "..name)
+	end
 end
 for name, rawcode in pairs(sources) do add(name, rawcode, priorities[name]) end
 end; --}};
---- debug ---
 local fallback = require "bootstrap.fallback"
---local fallback = fback.require "fallback"
 local _require = fallback.require -- or directly fallback
-local _PACKAGE = fallback.package
-local preload = _PACKAGE.preload
-
-preload["fallback.compat_env"] = function()
-        return {_NAME="compat_env"}
-end
-
-preload["foo.bar"] = function()
-        return {_NAME="foo.bar"}
-end
---- debug end ---
+local _preload = fallback.package.preload
 
 do --{{
 local sources, priorities = {}, {};assert(not sources["aio.integrity"],"module already exists")sources["aio.integrity"]=([===[-- <pack aio.integrity> --
@@ -210,6 +194,69 @@ _M.module_with_integrity_check_get = function() return module_with_integrity_che
 
 
 return _M
+]===]):gsub('\\([%]%[]===)\\([%]%[])','%1%2')
+assert(not sources["aio"],"module already exists")sources["aio"]=([===[-- <pack aio> --
+--[[--------------------------------------------------------------------------
+	-- Dragoon Framework - A Framework for Lua/LOVE --
+	-- Copyright (c) 2014-2015 TsT worldmaster.fr <tst2005@gmail.com> --
+--]]--------------------------------------------------------------------------
+
+local M = {}
+M._NAME = "lua-aio"
+M._VERSION = "lua-aio 0.6.2"
+M._LICENSE = "MIT"
+
+local core = require("aio.core")
+M.shebang	= assert(core.shebang)
+M.code		= assert(core.code)
+M.codehead	= assert(core.codehead) -- obsolete
+M.shellcode	= assert(core.shellcode)
+
+M.vfile	= assert(core.vfile)
+M.autoaliases	= assert(core.autoaliases)
+M.require	= assert(core.require)
+M.luacode	= assert(core.luacode)
+
+local mods = require "aio.mods"
+M.mode		= assert(mods.mode)
+M.inpreload	= assert(mods.inpreload)
+M.luamod	= assert(mods.luamod)
+M.rawmod	= assert(mods.rawmod)
+M.mod		= assert(mods.mod)
+M.finish	= assert(mods.finish)
+
+local function wrap(f)
+	return function(...)
+		f(...)
+		return M
+	end
+end
+
+for k,v in pairs(M) do
+	if type(v) == "function" then
+		M[k] = wrap(v)
+	end
+end
+
+local integrity = require "aio.integrity"
+if integrity then
+	M.icheck	= assert(integrity.cmd_icheck)
+	M.ichechinit	= assert(integrity.cmd_icheckinit)
+end
+
+local rock = require "aio.rock"
+
+--[[
+for k,v in pairs(rock) do
+	if type(v) == "function" then
+		rock[k] = wrap(v)
+	end
+end
+]]--
+
+M.rock = assert(rock)
+
+return M
 ]===]):gsub('\\([%]%[]===)\\([%]%[])','%1%2')
 assert(not sources["aio.core"],"module already exists")sources["aio.core"]=([===[-- <pack aio.core> --
 
@@ -506,7 +553,7 @@ end
 _M.mode		= assert(cmd_mode)
 
 local function cmd_inpreload(preload)
-	assert( type(preload)=="string", "argument #1 must be a lua code string")
+	assert( preload==nil or type(preload)=="string", "argument #1 must be a lua code string")
 	config.preload = preload
 end
 _M.inpreload		= assert(cmd_inpreload)
@@ -847,12 +894,12 @@ end
 --)
 --end
 
-local function rawpack2_finish()
+local function rawpack2_finish_with_aioruntime()
 	print_no_nl(
 [[
 local add
 if not pcall(function() add = require"aioruntime".add end) then
-        local loadstring=_G.loadstring or _G.load; local preload = ]] ..( config.preload or [[require"package".preload]] ).. "\n"..
+	local loadstring=_G.loadstring or _G.load; local preload = ]] ..( config.preload or [[require"package".preload]] ).. "\n"..
 [[	add = function(name, rawcode)
 		if not preload[name] then
 		        preload[name] = function(...) return assert(loadstring(rawcode), "loadstring: "..name.." failed")(...) end
@@ -866,6 +913,31 @@ end; --}};
 ]]
 )
 end
+local function rawpack2_finish_without_aioruntime()
+	print_no_nl(
+[[local loadstring=_G.loadstring or _G.load; local preload = ]] ..( config.preload or [[require"package".preload]] ).. "\n"..
+[[local add = function(name, rawcode)
+	if not preload[name] then
+	        preload[name] = function(...) return assert(loadstring(rawcode), "loadstring: "..name.." failed")(...) end
+	else
+		print("WARNING: overwrite "..name)
+	end
+end
+for name, rawcode in pairs(sources) do add(name, rawcode, priorities[name]) end
+end; --}};
+]]
+)
+end
+
+local function rawpack2_finish()
+        local use_aioruntime = false
+        if use_aioruntime then
+		rawpack2_finish_with_aioruntime()
+	else
+		rawpack2_finish_without_aioruntime()
+	end
+end
+
 
 local function finish()
 	if rawpack2_init_done and not rawpack2_finish_done then
@@ -942,88 +1014,26 @@ return _M
 assert(not sources["aio.config"],"module already exists")sources["aio.config"]=([===[-- <pack aio.config> --
 return {}
 ]===]):gsub('\\([%]%[]===)\\([%]%[])','%1%2')
-local add
-if not pcall(function() add = require"aioruntime".add end) then
-        local loadstring=_G.loadstring or _G.load; local preload = require"package".preload
-	add = function(name, rawcode)
-		if not preload[name] then
-		        preload[name] = function(...) return assert(loadstring(rawcode), "loadstring: "..name.." failed")(...) end
-		else
-			print("WARNING: overwrite "..name)
-		end
-        end
+local loadstring=_G.loadstring or _G.load; local preload = _preload
+local add = function(name, rawcode)
+	if not preload[name] then
+	        preload[name] = function(...) return assert(loadstring(rawcode), "loadstring: "..name.." failed")(...) end
+	else
+		print("WARNING: overwrite "..name)
+	end
 end
 for name, rawcode in pairs(sources) do add(name, rawcode, priorities[name]) end
 end; --}};
-do -- preload auto aliasing...
-	local p = require("package").preload
-	for k,v in pairs(p) do
-		if k:find("%.init$") then
-			local short = k:gsub("%.init$", "")
-			if not p[short] then
-				p[short] = v
-			end
-		end
-	end
-end
---[[--------------------------------------------------------------------------
-	-- Dragoon Framework - A Framework for Lua/LOVE --
-	-- Copyright (c) 2014-2015 TsT worldmaster.fr <tst2005@gmail.com> --
---]]--------------------------------------------------------------------------
 
-local M = {}
-M._NAME = "lua-aio"
-M._VERSION = "lua-aio 0.6.2"
-M._LICENSE = "MIT"
+local fback = require "bootstrap.fallback"
+local load = fback.load or _G.load
 
-local core = require("aio.core")
-M.shebang	= assert(core.shebang)
-M.code		= assert(core.code)
-M.codehead	= assert(core.codehead) -- obsolete
-M.shellcode	= assert(core.shellcode)
+local env = {require = fback.require, package=fback.package}
+env._G = env
+setmetatable(env, {__index = _G})
 
-M.vfile	= assert(core.vfile)
-M.autoaliases	= assert(core.autoaliases)
-M.require	= assert(core.require)
-M.luacode	= assert(core.luacode)
+local luacode = [[return require 'aio']]
+local aio = assert(load(luacode, luacode, "t", env), "load fail")()
+assert(aio and aio._NAME)
 
-local mods = require "aio.mods"
-M.mode		= assert(mods.mode)
-M.inpreload	= assert(mods.inpreload)
-M.luamod	= assert(mods.luamod)
-M.rawmod	= assert(mods.rawmod)
-M.mod		= assert(mods.mod)
-M.finish	= assert(mods.finish)
-
-local function wrap(f)
-	return function(...)
-		f(...)
-		return M
-	end
-end
-
-for k,v in pairs(M) do
-	if type(v) == "function" then
-		M[k] = wrap(v)
-	end
-end
-
-local integrity = require "aio.integrity"
-if integrity then
-	M.icheck	= assert(integrity.cmd_icheck)
-	M.ichechinit	= assert(integrity.cmd_icheckinit)
-end
-
-local rock = require "aio.rock"
-
---[[
-for k,v in pairs(rock) do
-	if type(v) == "function" then
-		rock[k] = wrap(v)
-	end
-end
-]]--
-
-M.rock = assert(rock)
-
-return M
+return aio
