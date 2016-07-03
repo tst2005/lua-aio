@@ -422,12 +422,13 @@ end
 
 
 function aio_class:rock_file(file)
+	assert(type(file)=="string", "argument #1 must be a string")
 	local compat_env
 	pcall( function() compat_env = require "compat_env" end )
+	pcall( function() compat_env = require "mini.compat-env" end )
 --	compat_env = compat_env or pcall( require, "mom" ) and require "compat_env"
---FIXME: compatenv w/loadfile
-	local loadfile = assert(compat_env.loadfile)
-	local ok, err = loadfile(file, "t", self.rockspec)
+	local load = assert(compat_env.load)
+	local ok, err = load(self:cat(file), "@"..file, "t", self.rockspec)
 
 	--[[
 	local fd = io.open(file, "r")
