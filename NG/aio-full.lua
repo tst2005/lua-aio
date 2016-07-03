@@ -1,4 +1,136 @@
-#!/usr/bin/env lua
+do --{{
+local sources, priorities = {}, {};assert(not sources["mini.compat-env"],"module already exists")sources["mini.compat-env"]=([===[-- <pack mini.compat-env> --
+----------------
+
+-- <thirdparty>
+-- pl.compat : https://github.com/stevedonovan/Penlight/blob/master/lua/pl/compat.lua
+-- Copyright (c) 2009 Steve Donovan, David Manura
+-- License : https://github.com/stevedonovan/Penlight/blob/master/LICENSE.md
+
+--- Lua 5.1/5.2 compatibility
+-- The exported function `load` is Lua 5.2 compatible.
+-- `compat.setfenv` and `compat.getfenv` are available for Lua 5.2, although
+-- they are not always guaranteed to work.
+-- @module pl.compat
+
+local compat = {}
+
+--compat.lua51 = _VERSION == 'Lua 5.1'
+
+----------------
+-- Load Lua code as a text or binary chunk.
+-- @param ld code string or loader
+-- @param[opt] source name of chunk for errors
+-- @param[opt] mode 'b', 't' or 'bt'
+-- @param[opt] env environment to load the chunk in
+-- @function compat.load
+
+---------------
+-- Get environment of a function.
+-- With Lua 5.2, may return nil for a function with no global references!
+-- Based on code by [Sergey Rozhenko](http://lua-users.org/lists/lua-l/2010-06/msg00313.html)
+-- @param f a function or a call stack reference
+-- @function compat.setfenv
+
+---------------
+-- Set environment of a function
+-- @param f a function or a call stack reference
+-- @param env a table that becomes the new environment of `f`
+-- @function compat.setfenv
+
+
+if pcall(load, '') then -- check if it's lua 5.2+ or LuaJIT's with a compatible load
+	compat.load = _G.load
+else
+	local native_load = load
+	function compat.load(str,src,mode,env)
+		local chunk,err
+		if type(str) == 'string' then
+			if str:byte(1) == 27 and not (mode or 'bt'):find 'b' then
+				return nil,"attempt to load a binary chunk"
+			end
+			chunk,err = loadstring(str,src)
+		else
+			chunk,err = native_load(str,src)
+		end
+		if chunk and env then setfenv(chunk,env) end
+		return chunk,err
+	end
+end
+-- </thirdparty>
+
+return compat
+]===]):gsub('\\([%]%[]===)\\([%]%[])','%1%2')
+assert(not sources["mini.class"],"module already exists")sources["mini.class"]=([===[-- <pack mini.class> --
+
+-- Copyright (c) 2016 TsT <tst2005@gmail.com>
+
+local common = {}
+common._VERSION  = "mini.class v0.1.0"
+common._URL      = 'http://github.com/tst2005/lua-mini'
+common._LICENSE  = 'MIT'
+
+
+-- <thirdparty>
+-- knife.base : https://github.com/airstruck/knife/blob/master/knife/base.lua
+-- Copyright (c) 2015 airstruck
+-- MIT License : https://github.com/airstruck/knife/blob/master/license
+local base = {
+	extend = function(self, subtype)
+		subtype = subtype or {}
+		local meta = { __index = subtype }
+		return setmetatable(subtype, {
+			__index = self,
+			__call = function(self, ...)
+				local instance = setmetatable({}, meta)
+				return instance, instance:init(...)
+			end,
+			__class = assert(common.class),
+			__instance = assert(common.instance),
+		})
+	end,
+	init = function() end,
+}
+-- </thirdparty>
+
+common.class = function(name, prototype, parent)
+	local parent = parent or base:extend()
+	local klass = parent:extend(prototype)
+	klass.init = (prototype or {}).init or (parent or {}).init
+	klass.name = name
+	return klass
+end
+
+common.instance = function(class, ...)
+        return class(...)
+end
+
+common.autometa = function(...)
+	return require "mini.class.autometa"(...)
+end
+
+local M = setmetatable({}, {
+	__call = function(_, ...)
+		return common.class(...)
+	end,
+	__index = common,
+	__newindex = function() error("read-only", 2) end,
+	__metatable = false,
+})
+
+return M
+]===]):gsub('\\([%]%[]===)\\([%]%[])','%1%2')
+local loadstring=_G.loadstring or _G.load; local preload = require"package".preload
+local add = function(name, rawcode)
+	if not preload[name] then
+	        preload[name] = function(...) return assert(loadstring(rawcode), "loadstring: "..name.." failed")(...) end
+	else
+		print("WARNING: overwrite "..name)
+	end
+end
+for name, rawcode in pairs(sources) do add(name, rawcode, priorities[name]) end
+end; --}};
+
 --[[--------------------------------------------------------------------------
 	-- Dragoon Framework - A Framework for Lua/LOVE --
 	-- Copyright (c) 2014-2015 TsT worldmaster.fr <tst2005@gmail.com> --
