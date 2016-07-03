@@ -418,6 +418,19 @@ end
 --
 --M.rock = assert(rock)
 
+local function sortedpairs(t)
+	local keys = {}
+	for k in pairs(t) do keys[#keys+1] = k end
+	table.sort(keys, function(a,b) return t[b] < t[a] end)
+	local i = 0
+	return function()
+		i = i + 1
+		if keys[i]~=nil then
+			return keys[i], t[keys[i] ]
+		end
+	end
+end
+
 
 
 
@@ -472,7 +485,7 @@ function aio_class:rock_mod(where, but)
 				end
 			end
 		end
-		for modname,modfile in pairs(modules) do
+		for modname,modfile in sortedpairs(modules) do
 			if type(modname) == "string" and not Done[modname] and modname ~= but then
 				Done[modname] = true
 				if type(modname) == "string" and type(modfile) == "string" then
