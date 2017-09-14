@@ -34,6 +34,6 @@ build = {
     ["aio.modraw2"]   = "src/aio/modraw2.lua",
     ["aio.rock"]      = "src/aio/rock.lua",
     ["aio.integrity"] = "src/aio/integrity.lua",
-    ["aio.load"]	= "src/aio/load.lua",
+    ["aio.compat_env"]	= "src/aio/compat_env.lua",
   },
 }
