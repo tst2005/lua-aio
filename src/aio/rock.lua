@@ -29,14 +29,12 @@ local rockspec = {} -- rockspecs file will be loaded into this isolated env
 local rockfile
 
 local function rock_file(file)
-	local compat_env
-	pcall( function() compat_env = require "compat_env" end )
-	compat_env = compat_env or pcall( require, "mom" ) and require "compat_env"
-
+	local compat_env = require "aio.compat_env"
 	local loadfile = assert(compat_env.loadfile)
 	local ok, err = loadfile(file, "t", rockspec)
 
 	--[[
+	local load = require "aio.load"
 	local fd = io.open(file, "r")
 	local content = fd:read("*a")
 	fd:close()
