@@ -1,160 +1,64 @@
 #!/usr/bin/env lua
 do --{{
-local sources, priorities = {}, {};assert(not sources["bootstrap.fallback"],"module already exists")sources["bootstrap.fallback"]=([===[-- <pack bootstrap.fallback> --
+local sources, priorities = {}, {};assert(not sources["aio.load"],"module already exists")sources["aio.load"]=([===[-- <pack aio.load> --
+----------------
 
--- ----------------------------------------------------------
+-- <thirdparty>
+-- pl.compat : https://github.com/stevedonovan/Penlight/blob/master/lua/pl/compat.lua
+-- Copyright (c) 2009 Steve Donovan, David Manura
+-- License : https://github.com/stevedonovan/Penlight/blob/master/LICENSE.md
 
---local assert = assert
-local error, ipairs, type = error, ipairs, type
-local format = string.format
---local loadfile = loadfile
+--- Lua 5.1/5.2 compatibility
+-- The exported function `load` is Lua 5.2 compatible.
+-- `compat.setfenv` and `compat.getfenv` are available for Lua 5.2, although
+-- they are not always guaranteed to work.
+-- @module pl.compat
 
-local function lassert(cond, msg, lvl)
-	if not cond then
-		error(msg, lvl+1)
-	end
-	return cond
-end
-local function checkmodname(s)
-	local t = type(s)
-	if t == "string" then
-	        return s
-	elseif t == "number" then
-		return tostring(s)
-	else
-		error("bad argument #1 to `require' (string expected, got "..t..")", 3)
-	end
-end
---
--- iterate over available searchers
---
-local function iload(modname, searchers)
-	lassert(type(searchers) == "table", "`package.searchers' must be a table", 2)
-	local msg = ""
-	for _, searcher in ipairs(searchers) do
-		local loader, param = searcher(modname)
-		if type(loader) == "function" then
-			return loader, param -- success
-		end
-		if type(loader) == "string" then
-			-- `loader` is actually an error message
-			msg = msg .. loader
-		end
-	end
-	error("module `" .. modname .. "' not found: "..msg, 2)
-end
+----------------
+-- Load Lua code as a text or binary chunk.
+-- @param ld code string or loader
+-- @param[opt] source name of chunk for errors
+-- @param[opt] mode 'b', 't' or 'bt'
+-- @param[opt] env environment to load the chunk in
+-- @function compat.load
 
-local function bigfunction_new(with_loaded)
+---------------
+-- Get environment of a function.
+-- With Lua 5.2, may return nil for a function with no global references!
+-- Based on code by [Sergey Rozhenko](http://lua-users.org/lists/lua-l/2010-06/msg00313.html)
+-- @param f a function or a call stack reference
+-- @function compat.setfenv
 
-	local _PACKAGE = {}
-	local _LOADED = with_loaded or {}
-	local _SEARCHERS  = {}
+---------------
+-- Set environment of a function
+-- @param f a function or a call stack reference
+-- @param env a table that becomes the new environment of `f`
+-- @function compat.setfenv
 
-	--
-	-- new require
-	--
-	local function _require(modname)
-
-		modname = checkmodname(modname)
-		local p = _LOADED[modname]
-		if p then -- is it there?
-			return p -- package is already loaded
-		end
-
-		local loader, param = iload(modname, _SEARCHERS)
-
-		local res = loader(modname, param)
-		if res ~= nil then
-			p = res
-		elseif not _LOADED[modname] then
-			p = true
+local compat_load
+if pcall(load, '') then -- check if it's lua 5.2+ or LuaJIT's with a compatible load
+	compat_load = load
+else
+	local native_load = load
+	function compat_load(str,src,mode,env)
+		local chunk,err
+		if type(str) == 'string' then
+			if str:byte(1) == 27 and not (mode or 'bt'):find 'b' then
+				return nil,"attempt to load a binary chunk"
+			end
+			chunk,err = loadstring(str,src)
 		else
-			p = _LOADED[name]
+			chunk,err = native_load(str,src)
 		end
-
-		_LOADED[modname] = p
-		return p
+		if chunk and env then setfenv(chunk,env) end
+		return chunk,err
 	end
-
-	_LOADED.package = _PACKAGE
-	do
-		local package = _PACKAGE
-		package.loaded		= _LOADED
-		package.searchers	= _SEARCHERS
-	end
-	return _require, _PACKAGE
-end -- big function
-
-local new = bigfunction_new
-
-local with_loaded = {}
-local _require, _PACKAGE = new(with_loaded)
-local searchers = _PACKAGE.searchers
-
--- [keep] 0) already loaded package (in _PACKAGE.loaded)
--- [keep] 1) local submodule will be stored in _PACKAGE.preload[?]
--- [new ] 2) uplevel require() (follow uplevel's loaded/preload/...)
--- [new ] 3) fallback -> search in preload table but with a suffix name "fallback."
-
---
--- check whether library is already loaded
---
-local _PRELOAD = {}
-_PACKAGE.preload = _PRELOAD
-local function searcher_preload(name)
-	lassert(type(name) == "string", format("bad argument #1 to `require' (string expected, got %s)", type(name)), 2)
-	lassert(type(_PRELOAD) == "table", "`package.preload' must be a table", 2)
-	return _PRELOAD[name]
 end
-table.insert(searchers, searcher_preload)
+-- </thirdparty>
 
---
-local function search_uplevel(modname)
-	local ok, ret = pcall(require, modname)
-	if not ok then return false end
-	return function() return ret end
-end
-table.insert(searchers, search_uplevel)
-
---
-local function search_fallback(modname)
-	return _PRELOAD["fallback." .. modname]
-end
-table.insert(searchers, search_fallback)
-
-return setmetatable({require = _require, package = _PACKAGE}, {__call = function(_self, ...) return _require(...) end})
+return compat_load
 ]===]):gsub('\\([%]%[]===)\\([%]%[])','%1%2')
-local add
-if not pcall(function() add = require"aioruntime".add end) then
-        local loadstring=_G.loadstring or _G.load; local preload = require"package".preload
-	add = function(name, rawcode)
-		if not preload[name] then
-		        preload[name] = function(...) return assert(loadstring(rawcode), "loadstring: "..name.." failed")(...) end
-		else
-			print("WARNING: overwrite "..name)
-		end
-        end
-end
-for name, rawcode in pairs(sources) do add(name, rawcode, priorities[name]) end
-end; --}};
---- debug ---
-local fallback = require "bootstrap.fallback"
---local fallback = fback.require "fallback"
-local _require = fallback.require -- or directly fallback
-local _PACKAGE = fallback.package
-local preload = _PACKAGE.preload
-
-preload["fallback.compat_env"] = function()
-        return {_NAME="compat_env"}
-end
-
-preload["foo.bar"] = function()
-        return {_NAME="foo.bar"}
-end
---- debug end ---
-
-do --{{
-local sources, priorities = {}, {};assert(not sources["aio.integrity"],"module already exists")sources["aio.integrity"]=([===[-- <pack aio.integrity> --
+assert(not sources["aio.integrity"],"module already exists")sources["aio.integrity"]=([===[-- <pack aio.integrity> --
 
 --[[--------------------------------------------------------------------------
 	-- Dragoon Framework - A Framework for Lua/LOVE --
@@ -587,14 +491,12 @@ local rockspec = {} -- rockspecs file will be loaded into this isolated env
 local rockfile
 
 local function rock_file(file)
-	local compat_env
-	pcall( function() compat_env = require "compat_env" end )
-	compat_env = compat_env or pcall( require, "mom" ) and require "compat_env"
-
+	local compat_env = require "aio.compat_env"
 	local loadfile = assert(compat_env.loadfile)
 	local ok, err = loadfile(file, "t", rockspec)
 
 	--[[
+	local load = require "aio.load"
 	local fd = io.open(file, "r")
 	local content = fd:read("*a")
 	fd:close()
@@ -973,7 +875,7 @@ end
 
 local M = {}
 M._NAME = "lua-aio"
-M._VERSION = "lua-aio 0.6.2"
+M._VERSION = "lua-aio 0.6.3"
 M._LICENSE = "MIT"
 
 local core = require("aio.core")
