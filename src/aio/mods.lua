@@ -38,11 +38,11 @@ end
 _M.luamod	= cmd_luamod
 
 local function cmd_rawmod(name, file)
-        if config.mode == "raw2" then
-                mods.raw2.pack_mod(name, file)
-        else
-                mods.raw.pack_mod(name, file)
-        end
+	if config.mode == "raw2" then
+		mods.raw2.pack_mod(name, file)
+	else
+		mods.raw.pack_mod(name, file)
+	end
 end
 _M.rawmod	= cmd_rawmod
 
@@ -68,7 +68,7 @@ local function cmd_finish()
 	if finish then
 		finish()
 	end
-        finish_print()
+	finish_print()
 end
 _M.finish	= cmd_finish
 

@@ -512,11 +512,11 @@ end
 _M.luamod	= cmd_luamod
 
 local function cmd_rawmod(name, file)
-        if config.mode == "raw2" then
-                mods.raw2.pack_mod(name, file)
-        else
-                mods.raw.pack_mod(name, file)
-        end
+	if config.mode == "raw2" then
+		mods.raw2.pack_mod(name, file)
+	else
+		mods.raw.pack_mod(name, file)
+	end
 end
 _M.rawmod	= cmd_rawmod
 
@@ -542,7 +542,7 @@ local function cmd_finish()
 	if finish then
 		finish()
 	end
-        finish_print()
+	finish_print()
 end
 _M.finish	= cmd_finish
 
@@ -843,14 +843,14 @@ local function rawpack2_finish()
 [[
 local add
 if not pcall(function() add = require"aioruntime".add end) then
-        local loadstring=_G.loadstring or _G.load; local preload = ]] ..( config.preload or [[require"package".preload]] ).. "\n"..
+	local loadstring=_G.loadstring or _G.load; local preload = ]] ..( config.preload or [[require"package".preload]] ).. "\n"..
 [[	add = function(name, rawcode)
 		if not preload[name] then
-		        preload[name] = function(...) return assert(loadstring(rawcode), "loadstring: "..name.." failed")(...) end
+			preload[name] = function(...) return assert(loadstring(rawcode), "loadstring: "..name.." failed")(...) end
 		else
 			print("WARNING: overwrite "..name)
 		end
-        end
+	end
 end
 for name, rawcode in pairs(sources) do add(name, rawcode, priorities[name]) end
 end; --}};
@@ -935,14 +935,14 @@ return {}
 ]===]):gsub('\\([%]%[]===)\\([%]%[])','%1%2')
 local add
 if not pcall(function() add = require"aioruntime".add end) then
-        local loadstring=_G.loadstring or _G.load; local preload = require"package".preload
+	local loadstring=_G.loadstring or _G.load; local preload = require"package".preload
 	add = function(name, rawcode)
 		if not preload[name] then
-		        preload[name] = function(...) return assert(loadstring(rawcode), "loadstring: "..name.." failed")(...) end
+			preload[name] = function(...) return assert(loadstring(rawcode), "loadstring: "..name.." failed")(...) end
 		else
 			print("WARNING: overwrite "..name)
 		end
-        end
+	end
 end
 for name, rawcode in pairs(sources) do add(name, rawcode, priorities[name]) end
 end; --}};

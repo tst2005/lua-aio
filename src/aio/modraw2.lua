@@ -68,14 +68,14 @@ local function rawpack2_finish()
 [[
 local add
 if not pcall(function() add = require"aioruntime".add end) then
-        local loadstring=_G.loadstring or _G.load; local preload = ]] ..( config.preload or [[require"package".preload]] ).. "\n"..
+	local loadstring=_G.loadstring or _G.load; local preload = ]] ..( config.preload or [[require"package".preload]] ).. "\n"..
 [[	add = function(name, rawcode)
 		if not preload[name] then
-		        preload[name] = function(...) return assert(loadstring(rawcode), "loadstring: "..name.." failed")(...) end
+			preload[name] = function(...) return assert(loadstring(rawcode), "loadstring: "..name.." failed")(...) end
 		else
 			print("WARNING: overwrite "..name)
 		end
-        end
+	end
 end
 for name, rawcode in pairs(sources) do add(name, rawcode, priorities[name]) end
 end; --}};
