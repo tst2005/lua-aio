@@ -8,6 +8,8 @@ local config = require "aio.config"
 
 config.mode = config.mode or "raw2" -- the default mode
 config.validmodes = {lua=true, raw=true, raw2=true}
+config.generate_bundle_metafile = true
+config.bundle_format = "v0.1.0.alpha1"
 
 local mods = {}
 mods.lua = require "aio.modlua"

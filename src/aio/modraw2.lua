@@ -64,19 +64,23 @@ end
 --end
 
 local function rawpack2_finish()
+	local bundle_metafile_code = ""
+	if config.generate_bundle_metafile then
+		bundle_metafile_code = ""..
+[[		preload[name..".__bundle"] = function() return {_BUNDLE=true,_BUNDLEFORMAT="]]..assert(config.bundle_format,"missing bundle_format")..[[",_BUNDLEOF=name} end]].."\n"
+	end
 	print_no_nl(
-[[
-local add
-if not pcall(function() add = require"aioruntime".add end) then
+[[local add
+--if not pcall(function() add = require"aioruntime".add end) then
 	local loadstring=_G.loadstring or _G.load; local preload = ]] ..( config.preload or [[require"package".preload]] ).. "\n"..
 [[	add = function(name, rawcode)
-		if not preload[name] then
-			preload[name] = function(...) return assert(loadstring(rawcode), "loadstring: "..name.." failed")(...) end
-		else
-			print("WARNING: overwrite "..name)
+		if preload[name] and putwarning and type(putwarning)=="function" then
+			putwarning("WARNING: overwrite "..name)
 		end
-	end
-end
+		preload[name] = function(...) return assert(loadstring(rawcode), "loadstring: "..name.." failed")(...) end
+]] .. bundle_metafile_code ..
+[[	end
+--end
 for name, rawcode in pairs(sources) do add(name, rawcode, priorities[name]) end
 end; --}};
 ]]

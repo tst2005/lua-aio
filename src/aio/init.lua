@@ -6,7 +6,7 @@
 
 local M = {}
 M._NAME = "lua-aio"
-M._VERSION = "lua-aio 0.6.3"
+M._VERSION = "lua-aio 0.7.0"
 M._LICENSE = "MIT"
 
 local core = require("aio.core")
