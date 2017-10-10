@@ -482,6 +482,8 @@ local config = require "aio.config"
 
 config.mode = config.mode or "raw2" -- the default mode
 config.validmodes = {lua=true, raw=true, raw2=true}
+config.generate_bundle_metafile = true
+config.bundle_format = "v0.1.0.alpha1"
 
 local mods = {}
 mods.lua = require "aio.modlua"
@@ -839,19 +841,23 @@ end
 --end
 
 local function rawpack2_finish()
+	local bundle_metafile_code = ""
+	if config.generate_bundle_metafile then
+		bundle_metafile_code = ""..
+[[		preload[name..".__bundle"] = function() return {_BUNDLE=true,_BUNDLEFORMAT="]]..assert(config.bundle_format,"missing bundle_format")..[[",_BUNDLEOF=name} end]].."\n"
+	end
 	print_no_nl(
-[[
-local add
-if not pcall(function() add = require"aioruntime".add end) then
+[[local add
+--if not pcall(function() add = require"aioruntime".add end) then
 	local loadstring=_G.loadstring or _G.load; local preload = ]] ..( config.preload or [[require"package".preload]] ).. "\n"..
 [[	add = function(name, rawcode)
-		if not preload[name] then
-			preload[name] = function(...) return assert(loadstring(rawcode), "loadstring: "..name.." failed")(...) end
-		else
-			print("WARNING: overwrite "..name)
+		if preload[name] and putwarning and type(putwarning)=="function" then
+			putwarning("WARNING: overwrite "..name)
 		end
-	end
-end
+		preload[name] = function(...) return assert(loadstring(rawcode), "loadstring: "..name.." failed")(...) end
+]] .. bundle_metafile_code ..
+[[	end
+--end
 for name, rawcode in pairs(sources) do add(name, rawcode, priorities[name]) end
 end; --}};
 ]]
@@ -934,16 +940,16 @@ assert(not sources["aio.config"],"module already exists")sources["aio.config"]=(
 return {}
 ]===]):gsub('\\([%]%[]===)\\([%]%[])','%1%2')
 local add
-if not pcall(function() add = require"aioruntime".add end) then
+--if not pcall(function() add = require"aioruntime".add end) then
 	local loadstring=_G.loadstring or _G.load; local preload = require"package".preload
 	add = function(name, rawcode)
-		if not preload[name] then
-			preload[name] = function(...) return assert(loadstring(rawcode), "loadstring: "..name.." failed")(...) end
-		else
-			print("WARNING: overwrite "..name)
+		if preload[name] and putwarning and type(putwarning)=="function" then
+			putwarning("WARNING: overwrite "..name)
 		end
+		preload[name] = function(...) return assert(loadstring(rawcode), "loadstring: "..name.." failed")(...) end
+		preload[name..".__bundle"] = function() return {_BUNDLE=true,_BUNDLEFORMAT="v0.1.0.alpha1",_BUNDLEOF=name} end
 	end
-end
+--end
 for name, rawcode in pairs(sources) do add(name, rawcode, priorities[name]) end
 end; --}};
 do -- preload auto aliasing...
@@ -964,7 +970,7 @@ end
 
 local M = {}
 M._NAME = "lua-aio"
-M._VERSION = "lua-aio 0.6.3"
+M._VERSION = "lua-aio 0.7.0"
 M._LICENSE = "MIT"
 
 local core = require("aio.core")
